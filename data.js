@@ -72,7 +72,7 @@ window.EXAM_DATA = {
     },
     {
       "name": "STEPHANIE",
-      "area": "BARRA",
+      "area": "ASESOR",
       "score": 76.5
     },
     {
