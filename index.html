@@ -1,51 +1,1026 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Examenes Staff</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #647386;
+      --line: #dfe6ee;
+      --panel: #ffffff;
+      --soft: #f5f7fa;
+      --brand: #176b87;
+      --good: #1f7a4f;
+      --warn: #c27818;
+      --danger: #c83737;
+      --shadow: 0 14px 34px rgba(25, 38, 52, .10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #eef2f6;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #12384a 0%, #176b87 55%, #2d8f78 100%);
+      color: white;
+      padding: 28px 32px 36px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      max-width: 820px;
+      color: rgba(255,255,255,.84);
+      font-size: 15px;
+    }
+
+    main {
+      width: min(1240px, calc(100% - 32px));
+      margin: -22px auto 36px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .metric,
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      min-height: 112px;
+      padding: 18px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: 31px;
+      line-height: 1;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .head h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input,
+    select {
+      width: 230px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      font-size: 14px;
+      outline: none;
+      background: white;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .content {
+      padding: 16px 18px 18px;
+    }
+
+    .bars {
+      display: grid;
+      gap: 9px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 58px;
+      gap: 10px;
+      align-items: center;
+      min-height: 27px;
+      font-size: 13px;
+    }
+
+    .bar-row.area {
+      grid-template-columns: 130px 1fr 72px;
+    }
+
+    .label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 800;
+    }
+
+    .track {
+      height: 14px;
+      overflow: hidden;
+      background: #e7edf3;
+      border-radius: 999px;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--brand);
+    }
+
+    .bar.good { background: var(--good); }
+    .bar.mid { background: var(--warn); }
+    .bar.bad { background: var(--danger); }
+
+    .value {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .table-wrap {
+      max-height: 610px;
+      overflow: auto;
+      border-top: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f7f9fb;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    td:nth-child(3),
+    td:nth-child(4) {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .pill {
+      display: inline-flex;
+      justify-content: center;
+      min-width: 82px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .pill.good { background: #dff3e9; color: var(--good); }
+    .pill.mid { background: #fff1cf; color: #976112; }
+    .pill.bad { background: #ffe1e1; color: var(--danger); }
+
+    .cards {
+      display: grid;
+      gap: 10px;
+    }
+
+    .card {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--soft);
+    }
+
+    .card strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .card small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .questions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .question {
+      min-height: 68px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .question strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .question span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .note {
+      margin-bottom: 12px;
+      border: 1px solid #cddbe6;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f3f8fb;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .empty {
+      padding: 18px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 960px) {
+      .metrics,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      input,
+      select {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .hero { padding: 22px 18px 30px; }
+      .hero h1 { font-size: 24px; }
+      main { width: calc(100% - 20px); }
+      .bar-row,
+      .bar-row.area { grid-template-columns: 98px 1fr 54px; }
+      .questions { grid-template-columns: 1fr; }
+      th, td { padding: 9px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>Sistema de Evaluacion Staff</h1>
+    <p>Dashboard calculado desde el Excel: ranking, preguntas con mayor error y areas que necesitan refuerzo. Seguridad queda fuera del analisis por area.</p>
+  </header>
+
+  <main>
+    <div class="metrics" id="metrics"></div>
+
+    <section style="margin-bottom: 18px;">
       <div class="head">
         <div>
           <h2>Selector de examen</h2>
           <p>Filtra todo el dashboard por un examen o revisa el acumulado general.</p>
-          <p>Usa "Todos" para ranking total acumulado o elige un examen para ranking por examen.</p>
         </div>
         <div class="controls">
           <select id="examFilter" aria-label="Filtrar por examen">
             <option value="TODOS">Todos los examenes</option>
           </select>
-          <select id="rankingMode" aria-label="Tipo de ranking">
-            <option value="TOTAL">Promedio total acumulado</option>
-            <option value="PROMEDIO_EXAMENES">Promedio de examenes</option>
-          </select>
         </div>
       </div>
     </section>
+
+    <div class="layout">
+      <section>
         <div class="head">
           <div>
             <h2>Ranking ordenado</h2>
             <p>Promedio por examen de cada persona. Seguridad no aparece en este ranking.</p>
-            <p id="rankingDescription">Promedio total acumulado de cada persona. Seguridad no aparece en este ranking.</p>
           </div>
           <div class="controls">
             <input id="search" type="search" placeholder="Buscar staff">
+            <select id="areaFilter" aria-label="Filtrar por area">
+              <option value="TODAS">Todas las areas</option>
+            </select>
+          </div>
+        </div>
+        <div class="content">
+          <div class="bars" id="rankingBars"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Area</th>
+                <th>Puntaje</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="rankingTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="stack">
+        <section>
+          <div class="head">
+            <div>
+              <h2>Resumen</h2>
+              <p>Lectura rapida del resultado.</p>
+            </div>
+          </div>
+          <div class="content">
+            <div class="cards" id="summary"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Comportamiento por persona</h2>
+              <p>Evolucion de una persona en todos sus examenes.</p>
+            </div>
+            <div class="controls">
+              <select id="personTrendFilter" aria-label="Seleccionar persona"></select>
+            </div>
+          </div>
+          <div class="content">
+            <div class="bars" id="personTrendBars"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Areas a reforzar</h2>
+              <p>Ordenadas de menor a mayor desempeno. No incluye Seguridad.</p>
+            </div>
+          </div>
+          <div class="content">
+            <div class="bars" id="areaBars"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Preguntas a reforzar</h2>
+              <p>Una respuesta cuenta como error si obtuvo menos del puntaje maximo.</p>
+            </div>
+            <div class="controls">
+              <select id="questionAreaFilter" aria-label="Filtrar preguntas por area">
+                <option value="TODAS">Todas las areas</option>
+              </select>
+              <select id="blockFilter" aria-label="Filtrar preguntas por bloque">
+                <option value="TODOS">Todos los bloques</option>
+              </select>
+            </div>
+          </div>
+          <div class="content">
+            <div class="note"><strong>Como leerlo:</strong> se muestran las preguntas con mas error, el porcentaje de personas que fallaron y los puntos perdidos acumulados.</div>
+            <div class="questions" id="questions"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script type="module">
+    const SHEET_ID = "1qVi5IyKS_Qjr5kvfhcgLkFmHCpeHzkCCHSnrHPSJOjg";
+    const STAFF_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=STAFF`;
+    const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASE_DATOS`;
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let value = "";
+      let quoted = false;
+
+      for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+        const next = text[index + 1];
+
+        if (char === '"' && quoted && next === '"') {
+          value += '"';
+          index += 1;
+        } else if (char === '"') {
+          quoted = !quoted;
+        } else if (char === "," && !quoted) {
+          row.push(value);
+          value = "";
+        } else if ((char === "\n" || char === "\r") && !quoted) {
+          if (char === "\r" && next === "\n") index += 1;
+          row.push(value);
+          if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+          row = [];
+          value = "";
+        } else {
+          value += char;
+        }
+      }
+
+      row.push(value);
+      if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+      return rows;
+    }
+
+    function clean(value) {
+      return String(value ?? "").trim();
+    }
+
+    function numberValue(value) {
+      const parsed = Number.parseFloat(clean(value).replace("%", "").replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function normalizeHeader(value) {
+      return clean(value)
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function normalizeArea(name, area) {
+      const normalizedName = normalizeName(name);
+      if (["LUIS FELIPE ANAYA", "GINA", "EVILENA"].includes(normalizedName)) return "LIDERES";
+      return clean(area) || "SIN CARGO";
+    }
+
+    function parseStaffCsv(text) {
+      const rows = parseCsv(text).filter(row => row.some(Boolean));
+      const first = rows[0] || [];
+      const hasHeader = first.some(cell => ["NOMBRE", "STAFF", "AREA", "CARGO", "PUNTAJE"].includes(normalizeHeader(cell)));
+      const body = hasHeader ? rows.slice(1) : rows;
+      const headers = hasHeader ? first.map(normalizeHeader) : [];
+      const nameIndex = hasHeader ? Math.max(headers.indexOf("NOMBRE"), headers.indexOf("STAFF")) : 0;
+      const areaIndex = hasHeader ? Math.max(headers.indexOf("AREA"), headers.indexOf("CARGO")) : 1;
+      const scoreIndex = hasHeader ? Math.max(headers.indexOf("PUNTAJE"), headers.indexOf("% ASERTIVIDAD")) : 2;
+
+      return body.map(row => {
+        const name = clean(row[nameIndex >= 0 ? nameIndex : 0]);
+        return {
+          name,
+          area: normalizeArea(name, row[areaIndex >= 0 ? areaIndex : 1]),
+          score: numberValue(row[scoreIndex >= 0 ? scoreIndex : 2])
+        };
+      }).filter(person => person.name);
+    }
+
+    function parseBaseCsv(text) {
+      const rows = parseCsv(text).filter(row => row.some(Boolean));
+      const headers = (rows[0] || []).map(normalizeHeader);
+      const find = label => headers.indexOf(label);
+      const nameIndex = find("NOMBRE");
+      const blockIndex = find("BLOQUE");
+      const questionIndex = find("PREGUNTA");
+      const answerIndex = find("RESPUESTA");
+      const maxIndex = find("PUNTAJE MAXIMO");
+      const scoreIndex = find("PUNTAJE OBTENIDO");
+      const examIndex = find("EXAMEN");
+      const dateIndex = find("FECHA");
+
+      return rows.slice(1).map(row => ({
+        exam: examIndex >= 0 ? clean(row[examIndex]) || "Examen actual" : "Examen actual",
+        name: clean(row[nameIndex]),
+        block: clean(row[blockIndex]),
+        question: clean(row[questionIndex]),
+        answer: clean(row[answerIndex]),
+        max: numberValue(row[maxIndex]),
+        score: numberValue(row[scoreIndex]),
+        date: dateIndex >= 0 ? clean(row[dateIndex]) : ""
+      })).filter(row => row.name && row.block && row.question && row.max > 0);
+    }
+
+    async function loadSheetData() {
+      try {
+        const [staffCsv, baseCsv] = await Promise.all([
+          fetch(STAFF_URL, { cache: "no-store" }).then(response => response.text()),
+          fetch(BASE_URL, { cache: "no-store" }).then(response => response.text())
+        ]);
+
+        const staff = parseStaffCsv(staffCsv);
+        const examRecords = parseBaseCsv(baseCsv);
+        if (!staff.length || !examRecords.length) throw new Error("Google Sheets no devolvio datos suficientes.");
+        return { staff, examRecords };
+      } catch (error) {
+        console.warn("Usando data.js como respaldo:", error);
+        return window.EXAM_DATA || { staff: [], examRecords: [] };
+      }
+    }
+
+    const data = await loadSheetData();
+    data.examRecords = data.examRecords.map(row => ({
+      ...row,
+      exam: clean(row.exam) || "Examen actual"
+    }));
+    const formatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+
+    function normalizeName(value) {
+      return String(value || "")
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+    }
+
+    function statusFor(score) {
+      if (score >= 80) return { label: "Alto", className: "good" };
+      if (score >= 70) return { label: "Medio", className: "mid" };
+      return { label: "Refuerzo", className: "bad" };
+    }
+
+    const staffByName = new Map(data.staff.map(person => [normalizeName(person.name), person]));
+    let activeRecords = data.examRecords;
+    let people = [];
+    let questions = [];
     let areas = [];
     let visiblePeople = [];
     let securityCount = 0;
-    let rankingMode = "TOTAL";
 
     function buildPeople() {
       const byPerson = new Map();
+
+      activeRecords.forEach(row => {
+        const key = normalizeName(row.name);
+        if (!byPerson.has(key)) {
+          const staff = staffByName.get(key) || { name: row.name, area: "SIN CARGO" };
+          byPerson.set(key, { name: staff.name, area: staff.area, score: 0, max: 0, exams: new Map() });
+        }
+        const person = byPerson.get(key);
+        const examName = row.exam || "Examen actual";
+        if (!person.exams.has(examName)) {
+          person.exams.set(examName, { score: 0, max: 0 });
+        }
+        const exam = person.exams.get(examName);
+        exam.score += Number(row.score) || 0;
+        exam.max += Number(row.max) || 0;
+        person.score += Number(row.score) || 0;
+        person.max += Number(row.max) || 0;
+      });
+
+      data.staff.forEach(staff => {
+        const key = normalizeName(staff.name);
+        if (!byPerson.has(key)) {
+          byPerson.set(key, {
+            name: staff.name,
+            area: staff.area || "SIN CARGO",
+            score: 0,
+            max: 0,
+            exams: new Map()
+          });
+        }
+      });
+
+      return [...byPerson.values()].map(person => {
         const examPercents = [...person.exams.values()]
           .filter(exam => exam.max > 0)
           .map(exam => (exam.score / exam.max) * 100);
         const percent = examPercents.length
-        const examAverage = examPercents.length
           ? examPercents.reduce((sum, value) => sum + value, 0) / examPercents.length
           : 0;
-        const totalPercent = person.max ? (person.score / person.max) * 100 : 0;
-        const percent = rankingMode === "PROMEDIO_EXAMENES" ? examAverage : totalPercent;
 
         return {
           ...person,
           examCount: examPercents.length,
-          examAverage,
-          totalPercent,
           percent
         };
       }).sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
+    }
 
+    function buildQuestions(records = activeRecords) {
+      const byQuestion = new Map();
+
+      records.forEach(row => {
+        const key = `${row.block}||${row.question}`;
+        if (!byQuestion.has(key)) {
+          byQuestion.set(key, {
+            block: row.block,
+            question: row.question,
+            total: 0,
+            errors: 0,
+            lostPoints: 0
+          });
+        }
+        const question = byQuestion.get(key);
+        question.total += 1;
+        if ((Number(row.score) || 0) < (Number(row.max) || 0)) question.errors += 1;
+        question.lostPoints += Math.max((Number(row.max) || 0) - (Number(row.score) || 0), 0);
+      });
+
+      return [...byQuestion.values()].map(question => ({
+        ...question,
+        errorRate: question.total ? (question.errors / question.total) * 100 : 0
+      })).sort((a, b) => b.errorRate - a.errorRate || b.lostPoints - a.lostPoints || a.question.localeCompare(b.question));
+    }
+
+    function buildAreas() {
+      const byArea = new Map();
+
+      activeRecords.forEach(row => {
+        const staff = staffByName.get(normalizeName(row.name));
+        const area = staff?.area || "SIN CARGO";
+        if (normalizeName(area) === "SEGURIDAD") return;
+
+        if (!byArea.has(area)) {
+          byArea.set(area, { area, people: new Set(), score: 0, max: 0, lostPoints: 0 });
+        }
+        const group = byArea.get(area);
+        group.people.add(normalizeName(row.name));
+        group.score += Number(row.score) || 0;
+        group.max += Number(row.max) || 0;
+        group.lostPoints += Math.max((Number(row.max) || 0) - (Number(row.score) || 0), 0);
+      });
+
+      return [...byArea.values()].map(area => ({
+        ...area,
+        count: area.people.size,
+        percent: area.max ? (area.score / area.max) * 100 : 0
+      })).sort((a, b) => a.percent - b.percent || b.lostPoints - a.lostPoints);
+    }
+
+    function rebuildDerivedData() {
+      people = buildPeople();
+      questions = buildQuestions();
+      areas = buildAreas();
+      visiblePeople = people.filter(person => normalizeName(person.area) !== "SEGURIDAD");
+      securityCount = people.length - visiblePeople.length;
+    }
+
+    function renderMetrics() {
+      const evaluated = visiblePeople.filter(person => person.percent > 0);
+      const approved = evaluated.filter(person => person.percent >= 70).length;
+      const average = evaluated.length ? evaluated.reduce((sum, person) => sum + person.percent, 0) / evaluated.length : 0;
+
+      const metrics = [
+        ["Promedio general", `${formatter.format(average)}%`, "Solo personas con puntaje mayor a 0"],
+        ["Staff analizado", visiblePeople.length, `${securityCount} de Seguridad excluidos`],
+        ["Total evaluados", evaluated.length, `${visiblePeople.length - evaluated.length} en cero o pendientes`],
+        ["Aprobados", approved, `${formatter.format(evaluated.length ? approved / evaluated.length * 100 : 0)}% de evaluados`]
+      ];
+
+      document.getElementById("metrics").innerHTML = metrics.map(([label, value, note]) => `
+        <article class="metric">
+          <span>${label}</span>
+          <strong>${value}</strong>
+          <small>${note}</small>
+        </article>
+      `).join("");
+    }
+
+    function renderSummary() {
+      const evaluated = visiblePeople.filter(person => person.percent > 0);
+      const best = visiblePeople[0] || { name: "Sin datos", percent: 0 };
+      const worst = [...evaluated].sort((a, b) => a.percent - b.percent)[0] || { name: "Sin datos", percent: 0 };
+      const weakestArea = areas[0] || { area: "Sin datos", percent: 0 };
+      const hardestQuestion = questions[0] || { question: "Sin datos", errorRate: 0 };
+
+      const cards = [
+        [best.name, `${formatter.format(best.percent)}%`, "Mejor puntaje"],
+        [worst.name, `${formatter.format(worst.percent)}%`, "Puntaje mas bajo evaluado"],
+        [weakestArea.area, `${formatter.format(weakestArea.percent)}%`, "Area con mayor necesidad"],
+        [hardestQuestion.question, `${formatter.format(hardestQuestion.errorRate)}%`, "Pregunta mas fallada"]
+      ];
+
+      document.getElementById("summary").innerHTML = cards.map(([name, value, label]) => `
+        <div class="card">
+          <div>
+            <strong>${name}</strong>
+            <small>${label}</small>
+          </div>
+          <span class="value">${value}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderRanking(list) {
+      const bars = document.getElementById("rankingBars");
+      const table = document.getElementById("rankingTable");
+
+      if (!list.length) {
+        bars.innerHTML = "";
+        table.innerHTML = `<tr><td colspan="5" class="empty">No hay resultados para esa busqueda.</td></tr>`;
+        return;
+      }
+
+      bars.innerHTML = list.slice(0, 16).map(person => {
+        const status = statusFor(person.percent);
+        return `
+          <div class="bar-row">
+            <div class="label" title="${person.name}">${person.name}</div>
+            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(person.percent, 2)}%"></div></div>
+            <div class="value">${formatter.format(person.percent)}</div>
+          </div>
+        `;
+      }).join("");
+
+      table.innerHTML = list.map((person, index) => {
+        const status = statusFor(person.percent);
+        const examLabel = person.examCount === 1 ? "1 examen" : `${person.examCount} examenes`;
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${person.name}</td>
+            <td>${person.area}</td>
+            <td>${formatter.format(person.percent)}%</td>
+            <td><span class="pill ${status.className}" title="${examLabel}">${status.label}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderAreas() {
+      document.getElementById("areaBars").innerHTML = areas.map(area => {
+        const status = statusFor(area.percent);
+        const lostPercent = area.max ? (area.lostPoints / area.max) * 100 : 0;
+        return `
+          <div class="bar-row area">
+            <div class="label" title="${area.area}">${area.area}</div>
+            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(area.percent, 2)}%"></div></div>
+            <div class="value">${formatter.format(area.percent)}%</div>
+          </div>
+          <div class="note">${area.count} personas · ${formatter.format(lostPercent)}% perdido (${formatter.format(area.lostPoints)} de ${formatter.format(area.max)} pts)</div>
+        `;
+      }).join("");
+    }
+
+    function buildPersonTrend(personName) {
+      const key = normalizeName(personName);
+      const byExam = new Map();
+
+      data.examRecords
+        .filter(row => normalizeName(row.name) === key)
+        .forEach(row => {
+          const exam = row.exam || "Examen actual";
+          if (!byExam.has(exam)) {
+            byExam.set(exam, { exam, score: 0, max: 0, lostPoints: 0 });
+          }
+          const item = byExam.get(exam);
+          item.score += Number(row.score) || 0;
+          item.max += Number(row.max) || 0;
+          item.lostPoints += Math.max((Number(row.max) || 0) - (Number(row.score) || 0), 0);
+        });
+
+      return [...byExam.values()].map(item => ({
+        ...item,
+        percent: item.max ? (item.score / item.max) * 100 : 0
+      })).sort((a, b) => a.exam.localeCompare(b.exam, undefined, { numeric: true }));
+    }
+
+    function populatePersonTrendFilter() {
+      const personFilter = document.getElementById("personTrendFilter");
+      const selected = personFilter.value;
+      const names = [...new Set([
+        ...data.staff.map(person => person.name),
+        ...data.examRecords.map(row => row.name)
+      ])]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+
+      personFilter.innerHTML = names.map(name => (
+        `<option value="${name}">${name}</option>`
+      )).join("");
+
+      if (names.includes(selected)) {
+        personFilter.value = selected;
+      } else if (names.length) {
+        personFilter.value = names[0];
+      }
+    }
+
+    function renderPersonTrend() {
+      const target = document.getElementById("personTrendBars");
+      const personName = document.getElementById("personTrendFilter").value;
+      const trend = buildPersonTrend(personName);
+
+      if (!trend.length) {
+        target.innerHTML = `<div class="empty">No hay examenes para esta persona.</div>`;
+        return;
+      }
+
+      target.innerHTML = trend.map(item => {
+        const status = statusFor(item.percent);
+        return `
+          <div class="bar-row area">
+            <div class="label" title="${item.exam}">${item.exam}</div>
+            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(item.percent, 2)}%"></div></div>
+            <div class="value">${formatter.format(item.percent)}%</div>
+          </div>
+          <div class="note">${formatter.format(item.score)} de ${formatter.format(item.max)} pts · ${formatter.format(item.lostPoints)} pts perdidos</div>
+        `;
+      }).join("");
+    }
+
+    function renderQuestions(list = questions) {
+      const target = document.getElementById("questions");
+
+      if (!list.length) {
+        target.innerHTML = `<div class="empty">No hay preguntas para ese filtro.</div>`;
+        return;
+      }
+
+      target.innerHTML = list.slice(0, 18).map((question, index) => `
+        <div class="question">
+          <strong>${index + 1}. ${question.question}</strong>
+          <span>${question.block} · ${question.errors}/${question.total} con error · ${formatter.format(question.errorRate)}% error · ${formatter.format(question.lostPoints)} pts perdidos</span>
+        </div>
+      `).join("");
+    }
+
+    function populateQuestionFilters() {
+      const areaFilter = document.getElementById("questionAreaFilter");
+      const blockFilter = document.getElementById("blockFilter");
+      const areaNames = [...new Set(visiblePeople.map(person => person.area))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+      const blocks = [...new Set(activeRecords.map(row => row.block))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      areaFilter.innerHTML = `<option value="TODAS">Todas las areas</option>` + areaNames.map(area => (
+        `<option value="${area}">${area}</option>`
+      )).join("");
+
+      blockFilter.innerHTML = `<option value="TODOS">Todos los bloques</option>` + blocks.map(block => (
+        `<option value="${block}">${block}</option>`
+      )).join("");
+    }
+
+    function applyQuestionFilters() {
+      const selectedArea = document.getElementById("questionAreaFilter").value;
+      const selectedBlock = document.getElementById("blockFilter").value;
+
+      const filteredRecords = activeRecords.filter(row => {
+        const staff = staffByName.get(normalizeName(row.name));
+        const area = staff?.area || "SIN CARGO";
+        if (normalizeName(area) === "SEGURIDAD") return false;
+
+        const matchesArea = selectedArea === "TODAS" || area === selectedArea;
+        const matchesBlock = selectedBlock === "TODOS" || row.block === selectedBlock;
+        return matchesArea && matchesBlock;
+      });
+
+      renderQuestions(buildQuestions(filteredRecords));
+    }
+
+    function populateAreaFilter() {
+      const areaFilter = document.getElementById("areaFilter");
+      const areaNames = [...new Set(visiblePeople.map(person => person.area))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+
+      areaFilter.innerHTML = `<option value="TODAS">Todas las areas</option>` + areaNames.map(area => (
+        `<option value="${area}">${area}</option>`
+      )).join("");
+    }
+
+    function populateExamFilter() {
+      const examFilter = document.getElementById("examFilter");
+      const exams = [...new Set(data.examRecords.map(row => row.exam || "Examen actual"))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      examFilter.innerHTML = `<option value="TODOS">Todos los examenes</option>` + exams.map(exam => (
+        `<option value="${exam}">${exam}</option>`
+      )).join("");
+    }
+
+    function resetSecondaryFilters() {
+      document.getElementById("search").value = "";
+      document.getElementById("areaFilter").value = "TODAS";
+      document.getElementById("questionAreaFilter").value = "TODAS";
+      document.getElementById("blockFilter").value = "TODOS";
+    }
+
+    function renderDashboard() {
+      renderMetrics();
+      renderSummary();
+      populateAreaFilter();
+      populateQuestionFilters();
+      populatePersonTrendFilter();
+      renderRanking(visiblePeople);
+      renderAreas();
+      renderPersonTrend();
+      applyQuestionFilters();
+    }
+
+    function applyExamFilter() {
+      const selectedExam = document.getElementById("examFilter").value;
+      activeRecords = selectedExam === "TODOS"
+        ? data.examRecords
+        : data.examRecords.filter(row => row.exam === selectedExam);
+
+      rebuildDerivedData();
+      renderDashboard();
+    }
+
+    function applyRankingFilters() {
+      const query = normalizeName(document.getElementById("search").value);
+      const selectedArea = document.getElementById("areaFilter").value;
+
+      renderRanking(visiblePeople.filter(person => {
+        const matchesText = normalizeName(person.name).includes(query) || normalizeName(person.area).includes(query);
+        const matchesArea = selectedArea === "TODAS" || person.area === selectedArea;
+        return matchesText && matchesArea;
+      }));
+    }
+
+    document.getElementById("search").addEventListener("input", applyRankingFilters);
+    document.getElementById("areaFilter").addEventListener("change", applyRankingFilters);
+    document.getElementById("questionAreaFilter").addEventListener("change", applyQuestionFilters);
+    document.getElementById("blockFilter").addEventListener("change", applyQuestionFilters);
+    document.getElementById("personTrendFilter").addEventListener("change", renderPersonTrend);
+    document.getElementById("examFilter").addEventListener("change", () => {
+      applyExamFilter();
+      resetSecondaryFilters();
+      renderDashboard();
+    });
+
+    populateExamFilter();
+    rebuildDerivedData();
+    renderDashboard();
+  </script>
+</body>
+</html>
