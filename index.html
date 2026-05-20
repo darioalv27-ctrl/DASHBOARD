@@ -374,7 +374,7 @@
         <div class="head">
           <div>
             <h2>Ranking ordenado</h2>
-            <p>Puntaje total del examen por persona.</p>
+            <p>Promedio por examen de cada persona. Seguridad no aparece en este ranking.</p>
           </div>
           <div class="controls">
             <input id="search" type="search" placeholder="Buscar staff">
@@ -412,6 +412,21 @@
           </div>
           <div class="content">
             <div class="cards" id="summary"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Comportamiento por persona</h2>
+              <p>Evolucion de una persona en todos sus examenes.</p>
+            </div>
+            <div class="controls">
+              <select id="personTrendFilter" aria-label="Seleccionar persona"></select>
+            </div>
+          </div>
+          <div class="content">
+            <div class="bars" id="personTrendBars"></div>
           </div>
         </section>
 
@@ -612,9 +627,16 @@
         const key = normalizeName(row.name);
         if (!byPerson.has(key)) {
           const staff = staffByName.get(key) || { name: row.name, area: "SIN CARGO" };
-          byPerson.set(key, { name: staff.name, area: staff.area, score: 0, max: 0 });
+          byPerson.set(key, { name: staff.name, area: staff.area, score: 0, max: 0, exams: new Map() });
         }
         const person = byPerson.get(key);
+        const examName = row.exam || "Examen actual";
+        if (!person.exams.has(examName)) {
+          person.exams.set(examName, { score: 0, max: 0 });
+        }
+        const exam = person.exams.get(examName);
+        exam.score += Number(row.score) || 0;
+        exam.max += Number(row.max) || 0;
         person.score += Number(row.score) || 0;
         person.max += Number(row.max) || 0;
       });
@@ -626,15 +648,26 @@
             name: staff.name,
             area: staff.area || "SIN CARGO",
             score: 0,
-            max: 100
+            max: 0,
+            exams: new Map()
           });
         }
       });
 
-      return [...byPerson.values()].map(person => ({
-        ...person,
-        percent: person.max ? (person.score / person.max) * 100 : 0
-      })).sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
+      return [...byPerson.values()].map(person => {
+        const examPercents = [...person.exams.values()]
+          .filter(exam => exam.max > 0)
+          .map(exam => (exam.score / exam.max) * 100);
+        const percent = examPercents.length
+          ? examPercents.reduce((sum, value) => sum + value, 0) / examPercents.length
+          : 0;
+
+        return {
+          ...person,
+          examCount: examPercents.length,
+          percent
+        };
+      }).sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
     }
 
     function buildQuestions(records = activeRecords) {
@@ -765,13 +798,14 @@
 
       table.innerHTML = list.map((person, index) => {
         const status = statusFor(person.percent);
+        const examLabel = person.examCount === 1 ? "1 examen" : `${person.examCount} examenes`;
         return `
           <tr>
             <td>${index + 1}</td>
             <td>${person.name}</td>
             <td>${person.area}</td>
             <td>${formatter.format(person.percent)}%</td>
-            <td><span class="pill ${status.className}">${status.label}</span></td>
+            <td><span class="pill ${status.className}" title="${examLabel}">${status.label}</span></td>
           </tr>
         `;
       }).join("");
@@ -788,6 +822,73 @@
             <div class="value">${formatter.format(area.percent)}%</div>
           </div>
           <div class="note">${area.count} personas · ${formatter.format(lostPercent)}% perdido (${formatter.format(area.lostPoints)} de ${formatter.format(area.max)} pts)</div>
+        `;
+      }).join("");
+    }
+
+    function buildPersonTrend(personName) {
+      const key = normalizeName(personName);
+      const byExam = new Map();
+
+      data.examRecords
+        .filter(row => normalizeName(row.name) === key)
+        .forEach(row => {
+          const exam = row.exam || "Examen actual";
+          if (!byExam.has(exam)) {
+            byExam.set(exam, { exam, score: 0, max: 0, lostPoints: 0 });
+          }
+          const item = byExam.get(exam);
+          item.score += Number(row.score) || 0;
+          item.max += Number(row.max) || 0;
+          item.lostPoints += Math.max((Number(row.max) || 0) - (Number(row.score) || 0), 0);
+        });
+
+      return [...byExam.values()].map(item => ({
+        ...item,
+        percent: item.max ? (item.score / item.max) * 100 : 0
+      })).sort((a, b) => a.exam.localeCompare(b.exam, undefined, { numeric: true }));
+    }
+
+    function populatePersonTrendFilter() {
+      const personFilter = document.getElementById("personTrendFilter");
+      const selected = personFilter.value;
+      const names = [...new Set([
+        ...data.staff.map(person => person.name),
+        ...data.examRecords.map(row => row.name)
+      ])]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+
+      personFilter.innerHTML = names.map(name => (
+        `<option value="${name}">${name}</option>`
+      )).join("");
+
+      if (names.includes(selected)) {
+        personFilter.value = selected;
+      } else if (names.length) {
+        personFilter.value = names[0];
+      }
+    }
+
+    function renderPersonTrend() {
+      const target = document.getElementById("personTrendBars");
+      const personName = document.getElementById("personTrendFilter").value;
+      const trend = buildPersonTrend(personName);
+
+      if (!trend.length) {
+        target.innerHTML = `<div class="empty">No hay examenes para esta persona.</div>`;
+        return;
+      }
+
+      target.innerHTML = trend.map(item => {
+        const status = statusFor(item.percent);
+        return `
+          <div class="bar-row area">
+            <div class="label" title="${item.exam}">${item.exam}</div>
+            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(item.percent, 2)}%"></div></div>
+            <div class="value">${formatter.format(item.percent)}%</div>
+          </div>
+          <div class="note">${formatter.format(item.score)} de ${formatter.format(item.max)} pts · ${formatter.format(item.lostPoints)} pts perdidos</div>
         `;
       }).join("");
     }
@@ -819,104 +920,4 @@
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
       areaFilter.innerHTML = `<option value="TODAS">Todas las areas</option>` + areaNames.map(area => (
-        `<option value="${area}">${area}</option>`
-      )).join("");
-
-      blockFilter.innerHTML = `<option value="TODOS">Todos los bloques</option>` + blocks.map(block => (
-        `<option value="${block}">${block}</option>`
-      )).join("");
-    }
-
-    function applyQuestionFilters() {
-      const selectedArea = document.getElementById("questionAreaFilter").value;
-      const selectedBlock = document.getElementById("blockFilter").value;
-
-      const filteredRecords = activeRecords.filter(row => {
-        const staff = staffByName.get(normalizeName(row.name));
-        const area = staff?.area || "SIN CARGO";
-        if (normalizeName(area) === "SEGURIDAD") return false;
-
-        const matchesArea = selectedArea === "TODAS" || area === selectedArea;
-        const matchesBlock = selectedBlock === "TODOS" || row.block === selectedBlock;
-        return matchesArea && matchesBlock;
-      });
-
-      renderQuestions(buildQuestions(filteredRecords));
-    }
-
-    function populateAreaFilter() {
-      const areaFilter = document.getElementById("areaFilter");
-      const areaNames = [...new Set(visiblePeople.map(person => person.area))]
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b));
-
-      areaFilter.innerHTML = `<option value="TODAS">Todas las areas</option>` + areaNames.map(area => (
-        `<option value="${area}">${area}</option>`
-      )).join("");
-    }
-
-    function populateExamFilter() {
-      const examFilter = document.getElementById("examFilter");
-      const exams = [...new Set(data.examRecords.map(row => row.exam || "Examen actual"))]
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-      examFilter.innerHTML = `<option value="TODOS">Todos los examenes</option>` + exams.map(exam => (
-        `<option value="${exam}">${exam}</option>`
-      )).join("");
-    }
-
-    function resetSecondaryFilters() {
-      document.getElementById("search").value = "";
-      document.getElementById("areaFilter").value = "TODAS";
-      document.getElementById("questionAreaFilter").value = "TODAS";
-      document.getElementById("blockFilter").value = "TODOS";
-    }
-
-    function renderDashboard() {
-      renderMetrics();
-      renderSummary();
-      populateAreaFilter();
-      populateQuestionFilters();
-      renderRanking(visiblePeople);
-      renderAreas();
-      applyQuestionFilters();
-    }
-
-    function applyExamFilter() {
-      const selectedExam = document.getElementById("examFilter").value;
-      activeRecords = selectedExam === "TODOS"
-        ? data.examRecords
-        : data.examRecords.filter(row => row.exam === selectedExam);
-
-      rebuildDerivedData();
-      renderDashboard();
-    }
-
-    function applyRankingFilters() {
-      const query = normalizeName(document.getElementById("search").value);
-      const selectedArea = document.getElementById("areaFilter").value;
-
-      renderRanking(visiblePeople.filter(person => {
-        const matchesText = normalizeName(person.name).includes(query) || normalizeName(person.area).includes(query);
-        const matchesArea = selectedArea === "TODAS" || person.area === selectedArea;
-        return matchesText && matchesArea;
-      }));
-    }
-
-    document.getElementById("search").addEventListener("input", applyRankingFilters);
-    document.getElementById("areaFilter").addEventListener("change", applyRankingFilters);
-    document.getElementById("questionAreaFilter").addEventListener("change", applyQuestionFilters);
-    document.getElementById("blockFilter").addEventListener("change", applyQuestionFilters);
-    document.getElementById("examFilter").addEventListener("change", () => {
-      applyExamFilter();
-      resetSecondaryFilters();
-      renderDashboard();
-    });
-
-    populateExamFilter();
-    rebuildDerivedData();
-    renderDashboard();
-  </script>
-</body>
-</html>
+        `<option value="${a
