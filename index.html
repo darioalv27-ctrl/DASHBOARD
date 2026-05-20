@@ -920,4 +920,107 @@
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
       areaFilter.innerHTML = `<option value="TODAS">Todas las areas</option>` + areaNames.map(area => (
-        `<option value="${a
+        `<option value="${area}">${area}</option>`
+      )).join("");
+
+      blockFilter.innerHTML = `<option value="TODOS">Todos los bloques</option>` + blocks.map(block => (
+        `<option value="${block}">${block}</option>`
+      )).join("");
+    }
+
+    function applyQuestionFilters() {
+      const selectedArea = document.getElementById("questionAreaFilter").value;
+      const selectedBlock = document.getElementById("blockFilter").value;
+
+      const filteredRecords = activeRecords.filter(row => {
+        const staff = staffByName.get(normalizeName(row.name));
+        const area = staff?.area || "SIN CARGO";
+        if (normalizeName(area) === "SEGURIDAD") return false;
+
+        const matchesArea = selectedArea === "TODAS" || area === selectedArea;
+        const matchesBlock = selectedBlock === "TODOS" || row.block === selectedBlock;
+        return matchesArea && matchesBlock;
+      });
+
+      renderQuestions(buildQuestions(filteredRecords));
+    }
+
+    function populateAreaFilter() {
+      const areaFilter = document.getElementById("areaFilter");
+      const areaNames = [...new Set(visiblePeople.map(person => person.area))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+
+      areaFilter.innerHTML = `<option value="TODAS">Todas las areas</option>` + areaNames.map(area => (
+        `<option value="${area}">${area}</option>`
+      )).join("");
+    }
+
+    function populateExamFilter() {
+      const examFilter = document.getElementById("examFilter");
+      const exams = [...new Set(data.examRecords.map(row => row.exam || "Examen actual"))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      examFilter.innerHTML = `<option value="TODOS">Todos los examenes</option>` + exams.map(exam => (
+        `<option value="${exam}">${exam}</option>`
+      )).join("");
+    }
+
+    function resetSecondaryFilters() {
+      document.getElementById("search").value = "";
+      document.getElementById("areaFilter").value = "TODAS";
+      document.getElementById("questionAreaFilter").value = "TODAS";
+      document.getElementById("blockFilter").value = "TODOS";
+    }
+
+    function renderDashboard() {
+      renderMetrics();
+      renderSummary();
+      populateAreaFilter();
+      populateQuestionFilters();
+      populatePersonTrendFilter();
+      renderRanking(visiblePeople);
+      renderAreas();
+      renderPersonTrend();
+      applyQuestionFilters();
+    }
+
+    function applyExamFilter() {
+      const selectedExam = document.getElementById("examFilter").value;
+      activeRecords = selectedExam === "TODOS"
+        ? data.examRecords
+        : data.examRecords.filter(row => row.exam === selectedExam);
+
+      rebuildDerivedData();
+      renderDashboard();
+    }
+
+    function applyRankingFilters() {
+      const query = normalizeName(document.getElementById("search").value);
+      const selectedArea = document.getElementById("areaFilter").value;
+
+      renderRanking(visiblePeople.filter(person => {
+        const matchesText = normalizeName(person.name).includes(query) || normalizeName(person.area).includes(query);
+        const matchesArea = selectedArea === "TODAS" || person.area === selectedArea;
+        return matchesText && matchesArea;
+      }));
+    }
+
+    document.getElementById("search").addEventListener("input", applyRankingFilters);
+    document.getElementById("areaFilter").addEventListener("change", applyRankingFilters);
+    document.getElementById("questionAreaFilter").addEventListener("change", applyQuestionFilters);
+    document.getElementById("blockFilter").addEventListener("change", applyQuestionFilters);
+    document.getElementById("personTrendFilter").addEventListener("change", renderPersonTrend);
+    document.getElementById("examFilter").addEventListener("change", () => {
+      applyExamFilter();
+      resetSecondaryFilters();
+      renderDashboard();
+    });
+
+    populateExamFilter();
+    rebuildDerivedData();
+    renderDashboard();
+  </script>
+</body>
+</html>
