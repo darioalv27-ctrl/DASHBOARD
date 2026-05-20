@@ -438,8 +438,126 @@
   </main>
 
   <script src="data.js"></script>
-  <script>
-    const data = window.EXAM_DATA || { staff: [], examRecords: [] };
+  <script type="module">
+    const SHEET_ID = "1qVi5IyKS_Qjr5kvfhcgLkFmHCpeHzkCCHSnrHPSJOjg";
+    const STAFF_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=STAFF`;
+    const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASE_DATOS`;
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let value = "";
+      let quoted = false;
+
+      for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+        const next = text[index + 1];
+
+        if (char === '"' && quoted && next === '"') {
+          value += '"';
+          index += 1;
+        } else if (char === '"') {
+          quoted = !quoted;
+        } else if (char === "," && !quoted) {
+          row.push(value);
+          value = "";
+        } else if ((char === "\n" || char === "\r") && !quoted) {
+          if (char === "\r" && next === "\n") index += 1;
+          row.push(value);
+          if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+          row = [];
+          value = "";
+        } else {
+          value += char;
+        }
+      }
+
+      row.push(value);
+      if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+      return rows;
+    }
+
+    function clean(value) {
+      return String(value ?? "").trim();
+    }
+
+    function numberValue(value) {
+      const parsed = Number.parseFloat(clean(value).replace("%", "").replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function normalizeHeader(value) {
+      return clean(value)
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function normalizeArea(name, area) {
+      const normalizedName = normalizeName(name);
+      if (["LUIS FELIPE ANAYA", "GINA", "EVILENA"].includes(normalizedName)) return "LIDERES";
+      return clean(area) || "SIN CARGO";
+    }
+
+    function parseStaffCsv(text) {
+      const rows = parseCsv(text).filter(row => row.some(Boolean));
+      const first = rows[0] || [];
+      const hasHeader = first.some(cell => ["NOMBRE", "STAFF", "AREA", "CARGO", "PUNTAJE"].includes(normalizeHeader(cell)));
+      const body = hasHeader ? rows.slice(1) : rows;
+      const headers = hasHeader ? first.map(normalizeHeader) : [];
+      const nameIndex = hasHeader ? Math.max(headers.indexOf("NOMBRE"), headers.indexOf("STAFF")) : 0;
+      const areaIndex = hasHeader ? Math.max(headers.indexOf("AREA"), headers.indexOf("CARGO")) : 1;
+      const scoreIndex = hasHeader ? Math.max(headers.indexOf("PUNTAJE"), headers.indexOf("% ASERTIVIDAD")) : 2;
+
+      return body.map(row => {
+        const name = clean(row[nameIndex >= 0 ? nameIndex : 0]);
+        return {
+          name,
+          area: normalizeArea(name, row[areaIndex >= 0 ? areaIndex : 1]),
+          score: numberValue(row[scoreIndex >= 0 ? scoreIndex : 2])
+        };
+      }).filter(person => person.name);
+    }
+
+    function parseBaseCsv(text) {
+      const rows = parseCsv(text).filter(row => row.some(Boolean));
+      const headers = (rows[0] || []).map(normalizeHeader);
+      const find = label => headers.indexOf(label);
+      const nameIndex = find("NOMBRE");
+      const blockIndex = find("BLOQUE");
+      const questionIndex = find("PREGUNTA");
+      const answerIndex = find("RESPUESTA");
+      const maxIndex = find("PUNTAJE MAXIMO");
+      const scoreIndex = find("PUNTAJE OBTENIDO");
+
+      return rows.slice(1).map(row => ({
+        name: clean(row[nameIndex]),
+        block: clean(row[blockIndex]),
+        question: clean(row[questionIndex]),
+        answer: clean(row[answerIndex]),
+        max: numberValue(row[maxIndex]),
+        score: numberValue(row[scoreIndex])
+      })).filter(row => row.name && row.block && row.question && row.max > 0);
+    }
+
+    async function loadSheetData() {
+      try {
+        const [staffCsv, baseCsv] = await Promise.all([
+          fetch(STAFF_URL, { cache: "no-store" }).then(response => response.text()),
+          fetch(BASE_URL, { cache: "no-store" }).then(response => response.text())
+        ]);
+
+        const staff = parseStaffCsv(staffCsv);
+        const examRecords = parseBaseCsv(baseCsv);
+        if (!staff.length || !examRecords.length) throw new Error("Google Sheets no devolvio datos suficientes.");
+        return { staff, examRecords };
+      } catch (error) {
+        console.warn("Usando data.js como respaldo:", error);
+        return window.EXAM_DATA || { staff: [], examRecords: [] };
+      }
+    }
+
+    const data = await loadSheetData();
     const formatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
 
     function normalizeName(value) {
