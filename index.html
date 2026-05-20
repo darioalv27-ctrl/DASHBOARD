@@ -355,6 +355,20 @@
   <main>
     <div class="metrics" id="metrics"></div>
 
+    <section style="margin-bottom: 18px;">
+      <div class="head">
+        <div>
+          <h2>Selector de examen</h2>
+          <p>Filtra todo el dashboard por un examen o revisa el acumulado general.</p>
+        </div>
+        <div class="controls">
+          <select id="examFilter" aria-label="Filtrar por examen">
+            <option value="TODOS">Todos los examenes</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
     <div class="layout">
       <section>
         <div class="head">
@@ -529,14 +543,18 @@
       const answerIndex = find("RESPUESTA");
       const maxIndex = find("PUNTAJE MAXIMO");
       const scoreIndex = find("PUNTAJE OBTENIDO");
+      const examIndex = find("EXAMEN");
+      const dateIndex = find("FECHA");
 
       return rows.slice(1).map(row => ({
+        exam: examIndex >= 0 ? clean(row[examIndex]) || "Examen actual" : "Examen actual",
         name: clean(row[nameIndex]),
         block: clean(row[blockIndex]),
         question: clean(row[questionIndex]),
         answer: clean(row[answerIndex]),
         max: numberValue(row[maxIndex]),
-        score: numberValue(row[scoreIndex])
+        score: numberValue(row[scoreIndex]),
+        date: dateIndex >= 0 ? clean(row[dateIndex]) : ""
       })).filter(row => row.name && row.block && row.question && row.max > 0);
     }
 
@@ -558,6 +576,10 @@
     }
 
     const data = await loadSheetData();
+    data.examRecords = data.examRecords.map(row => ({
+      ...row,
+      exam: clean(row.exam) || "Examen actual"
+    }));
     const formatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
 
     function normalizeName(value) {
@@ -576,11 +598,17 @@
     }
 
     const staffByName = new Map(data.staff.map(person => [normalizeName(person.name), person]));
+    let activeRecords = data.examRecords;
+    let people = [];
+    let questions = [];
+    let areas = [];
+    let visiblePeople = [];
+    let securityCount = 0;
 
     function buildPeople() {
       const byPerson = new Map();
 
-      data.examRecords.forEach(row => {
+      activeRecords.forEach(row => {
         const key = normalizeName(row.name);
         if (!byPerson.has(key)) {
           const staff = staffByName.get(key) || { name: row.name, area: "SIN CARGO" };
@@ -597,7 +625,7 @@
           byPerson.set(key, {
             name: staff.name,
             area: staff.area || "SIN CARGO",
-            score: Number(staff.score) || 0,
+            score: 0,
             max: 100
           });
         }
@@ -609,7 +637,7 @@
       })).sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
     }
 
-    function buildQuestions(records = data.examRecords) {
+    function buildQuestions(records = activeRecords) {
       const byQuestion = new Map();
 
       records.forEach(row => {
@@ -638,7 +666,7 @@
     function buildAreas() {
       const byArea = new Map();
 
-      data.examRecords.forEach(row => {
+      activeRecords.forEach(row => {
         const staff = staffByName.get(normalizeName(row.name));
         const area = staff?.area || "SIN CARGO";
         if (normalizeName(area) === "SEGURIDAD") return;
@@ -660,11 +688,13 @@
       })).sort((a, b) => a.percent - b.percent || b.lostPoints - a.lostPoints);
     }
 
-    const people = buildPeople();
-    const questions = buildQuestions();
-    const areas = buildAreas();
-    const visiblePeople = people.filter(person => normalizeName(person.area) !== "SEGURIDAD");
-    const securityCount = people.length - visiblePeople.length;
+    function rebuildDerivedData() {
+      people = buildPeople();
+      questions = buildQuestions();
+      areas = buildAreas();
+      visiblePeople = people.filter(person => normalizeName(person.area) !== "SEGURIDAD");
+      securityCount = people.length - visiblePeople.length;
+    }
 
     function renderMetrics() {
       const evaluated = visiblePeople.filter(person => person.percent > 0);
@@ -784,7 +814,7 @@
       const areaNames = [...new Set(visiblePeople.map(person => person.area))]
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b));
-      const blocks = [...new Set(data.examRecords.map(row => row.block))]
+      const blocks = [...new Set(activeRecords.map(row => row.block))]
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
@@ -801,7 +831,7 @@
       const selectedArea = document.getElementById("questionAreaFilter").value;
       const selectedBlock = document.getElementById("blockFilter").value;
 
-      const filteredRecords = data.examRecords.filter(row => {
+      const filteredRecords = activeRecords.filter(row => {
         const staff = staffByName.get(normalizeName(row.name));
         const area = staff?.area || "SIN CARGO";
         if (normalizeName(area) === "SEGURIDAD") return false;
@@ -825,6 +855,44 @@
       )).join("");
     }
 
+    function populateExamFilter() {
+      const examFilter = document.getElementById("examFilter");
+      const exams = [...new Set(data.examRecords.map(row => row.exam || "Examen actual"))]
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      examFilter.innerHTML = `<option value="TODOS">Todos los examenes</option>` + exams.map(exam => (
+        `<option value="${exam}">${exam}</option>`
+      )).join("");
+    }
+
+    function resetSecondaryFilters() {
+      document.getElementById("search").value = "";
+      document.getElementById("areaFilter").value = "TODAS";
+      document.getElementById("questionAreaFilter").value = "TODAS";
+      document.getElementById("blockFilter").value = "TODOS";
+    }
+
+    function renderDashboard() {
+      renderMetrics();
+      renderSummary();
+      populateAreaFilter();
+      populateQuestionFilters();
+      renderRanking(visiblePeople);
+      renderAreas();
+      applyQuestionFilters();
+    }
+
+    function applyExamFilter() {
+      const selectedExam = document.getElementById("examFilter").value;
+      activeRecords = selectedExam === "TODOS"
+        ? data.examRecords
+        : data.examRecords.filter(row => row.exam === selectedExam);
+
+      rebuildDerivedData();
+      renderDashboard();
+    }
+
     function applyRankingFilters() {
       const query = normalizeName(document.getElementById("search").value);
       const selectedArea = document.getElementById("areaFilter").value;
@@ -840,14 +908,15 @@
     document.getElementById("areaFilter").addEventListener("change", applyRankingFilters);
     document.getElementById("questionAreaFilter").addEventListener("change", applyQuestionFilters);
     document.getElementById("blockFilter").addEventListener("change", applyQuestionFilters);
+    document.getElementById("examFilter").addEventListener("change", () => {
+      applyExamFilter();
+      resetSecondaryFilters();
+      renderDashboard();
+    });
 
-    renderMetrics();
-    renderSummary();
-    populateAreaFilter();
-    populateQuestionFilters();
-    renderRanking(visiblePeople);
-    renderAreas();
-    applyQuestionFilters();
+    populateExamFilter();
+    rebuildDerivedData();
+    renderDashboard();
   </script>
 </body>
 </html>
