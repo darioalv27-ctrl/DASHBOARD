@@ -774,16 +774,40 @@
       areas = buildAreas();
     }
 
+    function selectedArea() {
+      return document.getElementById("areaFilter")?.value || "TODAS";
+    }
+
+    function matchesSelectedArea(nameOrArea) {
+      const area = rawData.staff.some(person => normalizeName(person.name) === normalizeName(nameOrArea))
+        ? getArea(nameOrArea)
+        : nameOrArea;
+      const selected = selectedArea();
+      return selected === "TODAS" || area === selected;
+    }
+
+    function analysisRecords() {
+      return activeRecords.filter(row => {
+        const area = getArea(row.name);
+        return !isSecurity(area) && matchesSelectedArea(area);
+      });
+    }
+
+    function analysisPeople() {
+      return visiblePeople.filter(person => matchesSelectedArea(person.area));
+    }
+
     function renderMetrics() {
-      const evaluated = visiblePeople.filter(person => person.percent > 0);
+      const currentPeople = analysisPeople();
+      const evaluated = currentPeople.filter(person => person.percent > 0);
       const approved = evaluated.filter(person => person.percent >= 70).length;
       const average = evaluated.length ? evaluated.reduce((sum, person) => sum + person.percent, 0) / evaluated.length : 0;
       const securityCount = people.length - visiblePeople.length;
 
       const metrics = [
         ["Promedio general", `${formatter.format(average)}%`, "No incluye Seguridad"],
-        ["Staff analizado", visiblePeople.length, `${securityCount} seguridad excluidos del ranking`],
-        ["Evaluados", evaluated.length, `${visiblePeople.length - evaluated.length} en cero o pendientes`],
+        ["Staff analizado", currentPeople.length, `${securityCount} seguridad excluidos del ranking`],
+        ["Evaluados", evaluated.length, `${currentPeople.length - evaluated.length} en cero o pendientes`],
         ["Aprobados", approved, `${formatter.format(evaluated.length ? approved / evaluated.length * 100 : 0)}% de evaluados`]
       ];
 
@@ -797,11 +821,14 @@
     }
 
     function renderSummary() {
-      const evaluated = visiblePeople.filter(person => person.percent > 0);
-      const best = visiblePeople[0] || { name: "Sin datos", percent: 0 };
+      const currentPeople = analysisPeople();
+      const evaluated = currentPeople.filter(person => person.percent > 0);
+      const best = currentPeople[0] || { name: "Sin datos", percent: 0 };
       const worst = [...evaluated].sort((a, b) => a.percent - b.percent)[0] || { name: "Sin datos", percent: 0 };
-      const weakestArea = areas[0] || { area: "Sin datos", percent: 0 };
-      const hardestQuestion = questions[0] || { question: "Sin datos", errorRate: 0 };
+      const currentAreas = selectedArea() === "TODAS" ? areas : areas.filter(area => area.area === selectedArea());
+      const weakestArea = currentAreas[0] || { area: "Sin datos", percent: 0 };
+      const currentQuestions = buildQuestions(analysisRecords());
+      const hardestQuestion = currentQuestions[0] || { question: "Sin datos", errorRate: 0 };
 
       const cards = [
         [best.name, `${formatter.format(best.percent)}%`, "Mejor puntaje del filtro"],
@@ -867,12 +894,13 @@
 
     function renderAreas() {
       const target = document.getElementById("areaBars");
-      if (!areas.length) {
+      const currentAreas = selectedArea() === "TODAS" ? areas : areas.filter(area => area.area === selectedArea());
+      if (!currentAreas.length) {
         target.innerHTML = `<div class="empty">No hay areas para este filtro.</div>`;
         return;
       }
 
-      target.innerHTML = areas.map(area => {
+      target.innerHTML = currentAreas.map(area => {
         const status = statusFor(area.percent);
         const lostPercent = area.max ? (area.lostPoints / area.max) * 100 : 0;
         return `
@@ -887,7 +915,18 @@
     }
 
     function renderExamSummary() {
-      const summaries = buildExamSummary();
+      const selected = selectedArea();
+      const summaries = buildExamSummary().map(summary => {
+        if (selected === "TODAS") return summary;
+        const records = rawData.examRecords.filter(row => row.exam === summary.exam && getArea(row.name) === selected && !isSecurity(selected));
+        const peopleForExam = buildPeople(records).filter(person => !isSecurity(person.area) && person.examCount > 0);
+        const average = peopleForExam.length
+          ? peopleForExam.reduce((sum, person) => sum + person.percent, 0) / peopleForExam.length
+          : 0;
+        const approved = peopleForExam.filter(person => person.percent >= 70).length;
+        return { exam: summary.exam, average, people: peopleForExam.length, approved };
+      }).filter(summary => selected === "TODAS" || summary.people > 0);
+
       document.getElementById("examSummary").innerHTML = summaries.map(exam => `
         <div class="card">
           <div>
@@ -962,26 +1001,45 @@
     }
 
     function populateFilters() {
+      const selectedExam = document.getElementById("examFilter").value;
+      const selectedRankingArea = document.getElementById("areaFilter").value;
+      const selectedQuestionArea = document.getElementById("questionAreaFilter").value;
+      const selectedBlock = document.getElementById("blockFilter").value;
+
       const exams = [...new Set(rawData.examRecords.map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       document.getElementById("examFilter").innerHTML = `<option value="TODOS">Todos los examenes</option>` + exams.map(exam => `<option value="${exam}">${exam}</option>`).join("");
+      if (selectedExam && (selectedExam === "TODOS" || exams.includes(selectedExam))) {
+        document.getElementById("examFilter").value = selectedExam;
+      }
 
       const areasList = [...new Set(visiblePeople.map(person => person.area))].filter(Boolean).sort((a, b) => a.localeCompare(b));
       document.getElementById("areaFilter").innerHTML = `<option value="TODAS">Todas las areas</option>` + areasList.map(area => `<option value="${area}">${area}</option>`).join("");
       document.getElementById("questionAreaFilter").innerHTML = `<option value="TODAS">Todas las areas</option>` + areasList.map(area => `<option value="${area}">${area}</option>`).join("");
+      if (selectedRankingArea && (selectedRankingArea === "TODAS" || areasList.includes(selectedRankingArea))) {
+        document.getElementById("areaFilter").value = selectedRankingArea;
+      }
+      if (selectedQuestionArea && (selectedQuestionArea === "TODAS" || areasList.includes(selectedQuestionArea))) {
+        document.getElementById("questionAreaFilter").value = selectedQuestionArea;
+      }
 
       const blocks = [...new Set(activeRecords.map(row => row.block))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       document.getElementById("blockFilter").innerHTML = `<option value="TODOS">Todos los bloques</option>` + blocks.map(block => `<option value="${block}">${block}</option>`).join("");
+      if (selectedBlock && (selectedBlock === "TODOS" || blocks.includes(selectedBlock))) {
+        document.getElementById("blockFilter").value = selectedBlock;
+      }
 
       populatePersonTrendFilter();
     }
 
     function applyQuestionFilters() {
-      const selectedArea = document.getElementById("questionAreaFilter").value;
+      const questionArea = document.getElementById("questionAreaFilter").value;
+      const globalArea = selectedArea();
+      const effectiveArea = questionArea === "TODAS" ? globalArea : questionArea;
       const selectedBlock = document.getElementById("blockFilter").value;
       const filteredRecords = activeRecords.filter(row => {
         const area = getArea(row.name);
         if (isSecurity(area)) return false;
-        const matchesArea = selectedArea === "TODAS" || area === selectedArea;
+        const matchesArea = effectiveArea === "TODAS" || area === effectiveArea;
         const matchesBlock = selectedBlock === "TODOS" || row.block === selectedBlock;
         return matchesArea && matchesBlock;
       });
@@ -1018,7 +1076,7 @@
     document.getElementById("examFilter").addEventListener("change", applyMainFilters);
     document.getElementById("rankingMode").addEventListener("change", applyMainFilters);
     document.getElementById("search").addEventListener("input", renderRanking);
-    document.getElementById("areaFilter").addEventListener("change", renderRanking);
+    document.getElementById("areaFilter").addEventListener("change", renderAll);
     document.getElementById("questionAreaFilter").addEventListener("change", applyQuestionFilters);
     document.getElementById("blockFilter").addEventListener("change", applyQuestionFilters);
     document.getElementById("personTrendFilter").addEventListener("change", renderPersonTrend);
