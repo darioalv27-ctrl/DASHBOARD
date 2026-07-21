@@ -12,7 +12,7 @@
       --panel: #ffffff;
       --soft: #f5f7fa;
       --brand: #176b87;
-      --brand-2: #2d8f78;
+      --brand2: #2d8f78;
       --good: #1f7a4f;
       --warn: #c27818;
       --danger: #c83737;
@@ -43,14 +43,22 @@
 
     .hero p {
       margin: 8px 0 0;
-      max-width: 900px;
+      max-width: 980px;
       color: rgba(255,255,255,.84);
       font-size: 15px;
     }
 
     main {
-      width: min(1280px, calc(100% - 32px));
+      width: min(1380px, calc(100% - 32px));
       margin: -22px auto 36px;
+    }
+
+    section,
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
     }
 
     .metrics {
@@ -60,16 +68,8 @@
       margin-bottom: 18px;
     }
 
-    .metric,
-    section {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-    }
-
     .metric {
-      min-height: 112px;
+      min-height: 108px;
       padding: 18px;
     }
 
@@ -84,7 +84,7 @@
     .metric strong {
       display: block;
       margin-top: 10px;
-      font-size: 31px;
+      font-size: 30px;
       line-height: 1;
     }
 
@@ -93,11 +93,12 @@
       margin-top: 8px;
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.35;
     }
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(380px, .85fr);
+      grid-template-columns: minmax(0, 1.15fr) minmax(390px, .85fr);
       gap: 18px;
       align-items: start;
     }
@@ -129,6 +130,10 @@
       font-size: 13px;
     }
 
+    .content {
+      padding: 16px 18px 18px;
+    }
+
     .controls {
       display: flex;
       gap: 10px;
@@ -147,10 +152,6 @@
       outline: none;
     }
 
-    .content {
-      padding: 16px 18px 18px;
-    }
-
     .bars {
       display: grid;
       gap: 9px;
@@ -158,7 +159,7 @@
 
     .bar-row {
       display: grid;
-      grid-template-columns: 150px 1fr 72px;
+      grid-template-columns: 160px 1fr 72px;
       gap: 10px;
       align-items: center;
       min-height: 27px;
@@ -224,9 +225,7 @@
       text-transform: uppercase;
     }
 
-    td:nth-child(3),
-    td:nth-child(4),
-    td:nth-child(5) {
+    td.num {
       text-align: right;
       font-weight: 800;
     }
@@ -245,9 +244,22 @@
     .pill.mid { background: #fff1cf; color: #976112; }
     .pill.bad { background: #ffe1e1; color: var(--danger); }
 
-    .cards {
+    .cards,
+    .questions {
       display: grid;
       gap: 10px;
+    }
+
+    .questions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card,
+    .question {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--soft);
     }
 
     .card {
@@ -255,46 +267,20 @@
       justify-content: space-between;
       gap: 12px;
       align-items: center;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px;
-      background: var(--soft);
     }
 
-    .card strong {
-      display: block;
-      font-size: 14px;
-    }
-
-    .card small {
-      display: block;
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .questions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .question {
-      min-height: 72px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
-    }
-
+    .card strong,
     .question strong {
       display: block;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.25;
     }
 
-    .question span {
+    .card small,
+    .question span,
+    .muted-line {
       display: block;
-      margin-top: 6px;
+      margin-top: 5px;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.35;
@@ -311,12 +297,18 @@
       line-height: 1.45;
     }
 
-    .muted-line {
-      margin-top: 5px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
+    .heatmap {
+      overflow: auto;
     }
+
+    .heatmap td,
+    .heatmap th {
+      text-align: center;
+    }
+
+    .cell-good { background: #dff3e9; color: var(--good); }
+    .cell-mid { background: #fff1cf; color: #976112; }
+    .cell-bad { background: #ffe1e1; color: var(--danger); }
 
     .empty {
       padding: 18px;
@@ -340,11 +332,11 @@
       }
     }
 
-    @media (max-width: 580px) {
+    @media (max-width: 620px) {
       .hero { padding: 22px 18px 30px; }
       .hero h1 { font-size: 24px; }
       main { width: calc(100% - 20px); }
-      .bar-row { grid-template-columns: 104px 1fr 58px; }
+      .bar-row { grid-template-columns: 108px 1fr 58px; }
       .questions { grid-template-columns: 1fr; }
       th, td { padding: 9px 10px; }
     }
@@ -353,7 +345,7 @@
 <body>
   <header class="hero">
     <h1>Sistema de Evaluacion Staff</h1>
-    <p>Dashboard conectado a Google Sheets para analizar examenes, ranking general, ranking por examen, comportamiento por persona, areas y preguntas a reforzar.</p>
+    <p>Analisis conectado a Google Sheets: resumen ejecutivo, ranking, evolucion, mapas de calor, alertas, preguntas criticas y comportamiento por persona.</p>
   </header>
 
   <main>
@@ -363,15 +355,14 @@
       <div class="head">
         <div>
           <h2>Filtros principales</h2>
-          <p>Elige un examen para ver ranking por examen o deja todos para el acumulado.</p>
+          <p>Los nuevos en periodo de prueba se excluyen del porcentaje general si solo tienen ese examen.</p>
         </div>
         <div class="controls">
-          <select id="examFilter" aria-label="Filtrar por examen">
-            <option value="TODOS">Todos los examenes</option>
-          </select>
-          <select id="rankingMode" aria-label="Tipo de ranking">
+          <select id="examFilter"></select>
+          <select id="areaFilter"></select>
+          <select id="rankingMode">
             <option value="TOTAL">Promedio total acumulado</option>
-            <option value="PROMEDIO_EXAMENES">Promedio de examenes</option>
+            <option value="PROMEDIO_EXAMENES">Promedio simple de examenes</option>
           </select>
         </div>
       </div>
@@ -386,9 +377,6 @@
           </div>
           <div class="controls">
             <input id="search" type="search" placeholder="Buscar staff">
-            <select id="areaFilter" aria-label="Filtrar ranking por area">
-              <option value="TODAS">Todas las areas</option>
-            </select>
           </div>
         </div>
         <div class="content">
@@ -415,8 +403,8 @@
         <section>
           <div class="head">
             <div>
-              <h2>Resumen</h2>
-              <p>Lectura rapida del filtro actual.</p>
+              <h2>Resumen ejecutivo</h2>
+              <p>Indicadores clave del filtro actual.</p>
             </div>
           </div>
           <div class="content">
@@ -427,11 +415,23 @@
         <section>
           <div class="head">
             <div>
+              <h2>Alertas automaticas</h2>
+              <p>Rojo menor a 69%, naranja menor a 85%, verde mayor o igual a 86%.</p>
+            </div>
+          </div>
+          <div class="content">
+            <div class="cards" id="alerts"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
               <h2>Comportamiento por persona</h2>
-              <p>Evolucion de una persona en todos sus examenes.</p>
+              <p>Evolucion por examen, incluyendo Seguridad y periodo de prueba.</p>
             </div>
             <div class="controls">
-              <select id="personTrendFilter" aria-label="Seleccionar persona"></select>
+              <select id="personTrendFilter"></select>
             </div>
           </div>
           <div class="content">
@@ -442,8 +442,8 @@
         <section>
           <div class="head">
             <div>
-              <h2>Comparativo de examenes</h2>
-              <p>Promedio, evaluados y dificultad por examen.</p>
+              <h2>Comparacion entre examenes</h2>
+              <p>Promedio, aprobados y veces presentado.</p>
             </div>
           </div>
           <div class="content">
@@ -454,32 +454,72 @@
         <section>
           <div class="head">
             <div>
-              <h2>Areas a reforzar</h2>
-              <p>Ordenadas de menor a mayor desempeno. No incluye Seguridad.</p>
+              <h2>Evolucion del aprendizaje</h2>
+              <p>Promedio general por examen en orden de aparicion.</p>
             </div>
           </div>
           <div class="content">
-            <div class="bars" id="areaBars"></div>
+            <div class="bars" id="learningEvolution"></div>
           </div>
         </section>
 
         <section>
           <div class="head">
             <div>
-              <h2>Preguntas a reforzar</h2>
-              <p>Una respuesta cuenta como error si obtuvo menos del puntaje maximo.</p>
-            </div>
-            <div class="controls">
-              <select id="questionAreaFilter" aria-label="Filtrar preguntas por area">
-                <option value="TODAS">Todas las areas</option>
-              </select>
-              <select id="blockFilter" aria-label="Filtrar preguntas por bloque">
-                <option value="TODOS">Todos los bloques</option>
-              </select>
+              <h2>Rendimiento por bloque</h2>
+              <p>Bloques fuertes y debiles con color de alerta.</p>
             </div>
           </div>
           <div class="content">
-            <div class="note"><strong>Como leerlo:</strong> el porcentaje de error se recalcula segun examen, area y bloque filtrados.</div>
+            <div class="bars" id="blockPerformance"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Mapa de calor</h2>
+              <p>Areas contra examenes.</p>
+            </div>
+          </div>
+          <div class="content heatmap" id="heatmap"></div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Distribucion de calificaciones</h2>
+              <p>Concentracion de resultados por rango.</p>
+            </div>
+          </div>
+          <div class="content">
+            <div class="bars" id="distribution"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Mejora y acompanamiento</h2>
+              <p>Quienes mas mejoran y quienes requieren seguimiento.</p>
+            </div>
+          </div>
+          <div class="content">
+            <div class="cards" id="peopleSignals"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="head">
+            <div>
+              <h2>Top 10 preguntas criticas</h2>
+              <p>Menor porcentaje de aciertos.</p>
+            </div>
+            <div class="controls">
+              <select id="blockFilter"></select>
+            </div>
+          </div>
+          <div class="content">
             <div class="questions" id="questions"></div>
           </div>
         </section>
@@ -497,8 +537,7 @@
     let activeRecords = [];
     let people = [];
     let visiblePeople = [];
-    let questions = [];
-    let areas = [];
+    let analysisRecordsCache = [];
     let rankingMode = "TOTAL";
 
     function parseCsv(text) {
@@ -506,11 +545,9 @@
       let row = [];
       let value = "";
       let quoted = false;
-
       for (let index = 0; index < text.length; index += 1) {
         const char = text[index];
         const next = text[index + 1];
-
         if (char === '"' && quoted && next === '"') {
           value += '"';
           index += 1;
@@ -529,7 +566,6 @@
           value += char;
         }
       }
-
       row.push(value);
       if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
       return rows;
@@ -544,39 +580,33 @@
       return Number.isFinite(parsed) ? parsed : 0;
     }
 
-    function normalizeHeader(value) {
-      return clean(value)
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+    function normalize(value) {
+      return clean(value).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
     }
 
-    function normalizeName(value) {
-      return clean(value)
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, " ");
+    function normalizeHeader(value) {
+      return normalize(value);
     }
 
     function isSecurity(area) {
-      return normalizeName(area).includes("SEGURIDAD");
+      return normalize(area).includes("SEGURIDAD");
+    }
+
+    function isTrialExam(exam) {
+      const value = normalize(exam);
+      return value.includes("PERIODO") || value.includes("PRUEBA");
     }
 
     function statusFor(score) {
-      if (score >= 80) return { label: "Alto", className: "good" };
-      if (score >= 70) return { label: "Medio", className: "mid" };
-      return { label: "Refuerzo", className: "bad" };
+      if (score >= 86) return { label: "Fuerte", className: "good" };
+      if (score >= 69) return { label: "Alerta", className: "mid" };
+      return { label: "Critico", className: "bad" };
     }
 
     function parseStaffCsv(text) {
       return parseCsv(text)
         .filter(row => row.some(Boolean))
-        .map(row => ({
-          name: clean(row[0]),
-          area: clean(row[1]) || "SIN CARGO",
-          score: numberValue(row[2])
-        }))
+        .map(row => ({ name: clean(row[0]), area: clean(row[1]) || "SIN CARGO", score: numberValue(row[2]) }))
         .filter(person => person.name);
     }
 
@@ -584,16 +614,15 @@
       const rows = parseCsv(text).filter(row => row.some(Boolean));
       const headers = (rows[0] || []).map(normalizeHeader);
       const find = label => headers.indexOf(label);
+      const maxIndex = headers.findIndex(header => header === "PUNTAJE MAXIMO");
       const examIndex = find("EXAMEN");
       const nameIndex = find("NOMBRE");
       const blockIndex = find("BLOQUE");
       const questionIndex = find("PREGUNTA");
       const answerIndex = find("RESPUESTA");
-      const maxIndex = headers.findIndex(header => header === "PUNTAJE MAXIMO");
       const scoreIndex = find("PUNTAJE OBTENIDO");
-      const sheetAverageIndex = find("PROMEDIOS POR EXAMEN");
+      const averageIndex = find("PROMEDIOS POR EXAMEN");
       const dateIndex = find("FECHA");
-
       return rows.slice(1).map(row => ({
         exam: clean(row[examIndex]) || "Examen actual",
         name: clean(row[nameIndex]),
@@ -602,7 +631,7 @@
         answer: clean(row[answerIndex]),
         max: numberValue(row[maxIndex]),
         score: numberValue(row[scoreIndex]),
-        sheetAverage: numberValue(row[sheetAverageIndex]),
+        sheetAverage: numberValue(row[averageIndex]),
         date: clean(row[dateIndex])
       })).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
     }
@@ -612,68 +641,33 @@
         fetch(STAFF_URL, { cache: "no-store" }).then(response => response.text()),
         fetch(BASE_URL, { cache: "no-store" }).then(response => response.text())
       ]);
-
-      return {
-        staff: parseStaffCsv(staffCsv),
-        examRecords: parseBaseCsv(baseCsv)
-      };
+      return { staff: parseStaffCsv(staffCsv), examRecords: parseBaseCsv(baseCsv) };
     }
 
     function staffMap() {
-      return new Map(rawData.staff.map(person => [normalizeName(person.name), person]));
+      return new Map(rawData.staff.map(person => [normalize(person.name), person]));
     }
 
     function getArea(name) {
-      const staff = staffMap().get(normalizeName(name));
-      return staff?.area || "SIN CARGO";
+      return staffMap().get(normalize(name))?.area || "SIN CARGO";
     }
 
-    function buildPersonExamMap(records) {
-      const byPerson = new Map();
+    function attemptKey(row) {
+      return `${normalize(row.name)}||${row.exam}||${row.date || "SIN FECHA"}`;
+    }
 
-      records.forEach(row => {
-        const key = normalizeName(row.name);
-        const person = byPerson.get(key) || {
-          name: row.name,
-          area: getArea(row.name),
-          score: 0,
-          max: 0,
-          exams: new Map()
-        };
+    function getSelectedArea() {
+      return document.getElementById("areaFilter")?.value || "TODAS";
+    }
 
-        const exam = person.exams.get(row.exam) || {
-          exam: row.exam,
-          score: 0,
-          max: 0,
-          lost: 0,
-          sheetAverages: []
-        };
+    function getSelectedExam() {
+      return document.getElementById("examFilter")?.value || "TODOS";
+    }
 
-        exam.score += row.score;
-        exam.max += row.max;
-        exam.lost += Math.max(row.max - row.score, 0);
-        if (row.sheetAverage > 0) exam.sheetAverages.push(row.sheetAverage);
-
-        person.score += row.score;
-        person.max += row.max;
-        person.exams.set(row.exam, exam);
-        byPerson.set(key, person);
-      });
-
-      rawData.staff.forEach(staff => {
-        const key = normalizeName(staff.name);
-        if (!byPerson.has(key)) {
-          byPerson.set(key, {
-            name: staff.name,
-            area: staff.area || "SIN CARGO",
-            score: 0,
-            max: 0,
-            exams: new Map()
-          });
-        }
-      });
-
-      return byPerson;
+    function allowedForGeneral(person) {
+      if (isSecurity(person.area)) return false;
+      if (person.examCount === 1 && person.examNames.every(isTrialExam)) return false;
+      return true;
     }
 
     function examPercent(exam) {
@@ -684,452 +678,327 @@
       return exam.max ? (exam.score / exam.max) * 100 : 0;
     }
 
+    function buildPersonExamMap(records) {
+      const byPerson = new Map();
+      records.forEach(row => {
+        const key = normalize(row.name);
+        const person = byPerson.get(key) || { name: row.name, area: getArea(row.name), score: 0, max: 0, exams: new Map() };
+        const exam = person.exams.get(row.exam) || { exam: row.exam, score: 0, max: 0, lost: 0, sheetAverages: [] };
+        exam.score += row.score;
+        exam.max += row.max;
+        exam.lost += Math.max(row.max - row.score, 0);
+        if (row.sheetAverage > 0) exam.sheetAverages.push(row.sheetAverage);
+        person.score += row.score;
+        person.max += row.max;
+        person.exams.set(row.exam, exam);
+        byPerson.set(key, person);
+      });
+      rawData.staff.forEach(staff => {
+        const key = normalize(staff.name);
+        if (!byPerson.has(key)) byPerson.set(key, { name: staff.name, area: staff.area || "SIN CARGO", score: 0, max: 0, exams: new Map() });
+      });
+      return byPerson;
+    }
+
     function buildPeople(records = activeRecords) {
       return [...buildPersonExamMap(records).values()].map(person => {
-        const examPercents = [...person.exams.values()].map(examPercent).filter(value => value > 0);
-        const examAverage = examPercents.length
-          ? examPercents.reduce((sum, value) => sum + value, 0) / examPercents.length
-          : 0;
+        const examItems = [...person.exams.values()];
+        const examPercents = examItems.map(examPercent).filter(value => value > 0);
+        const examAverage = examPercents.length ? examPercents.reduce((sum, value) => sum + value, 0) / examPercents.length : 0;
         const totalPercent = person.max ? (person.score / person.max) * 100 : 0;
         const percent = rankingMode === "PROMEDIO_EXAMENES" ? examAverage : totalPercent;
-
-        return {
-          ...person,
-          examCount: examPercents.length,
-          examAverage,
-          totalPercent,
-          percent
-        };
+        return { ...person, examCount: examPercents.length, examNames: examItems.map(item => item.exam), examAverage, totalPercent, percent };
       }).sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
     }
 
-    function buildQuestions(records = activeRecords) {
-      const byQuestion = new Map();
-
-      records.forEach(row => {
-        if (isSecurity(getArea(row.name))) return;
-        const key = `${row.block}||${row.question}`;
-        const question = byQuestion.get(key) || {
-          block: row.block,
-          question: row.question,
-          total: 0,
-          errors: 0,
-          lostPoints: 0
-        };
-
-        question.total += 1;
-        if (row.score < row.max) question.errors += 1;
-        question.lostPoints += Math.max(row.max - row.score, 0);
-        byQuestion.set(key, question);
+    function currentAreaRecords(records = activeRecords) {
+      const area = getSelectedArea();
+      return records.filter(row => {
+        const personArea = getArea(row.name);
+        if (isSecurity(personArea)) return false;
+        if (area !== "TODAS" && personArea !== area) return false;
+        return true;
       });
+    }
 
-      return [...byQuestion.values()].map(question => ({
-        ...question,
-        errorRate: question.total ? (question.errors / question.total) * 100 : 0
-      })).sort((a, b) => b.errorRate - a.errorRate || b.lostPoints - a.lostPoints || a.question.localeCompare(b.question));
+    function buildBlocks(records = currentAreaRecords()) {
+      const blocks = new Map();
+      records.forEach(row => {
+        const item = blocks.get(row.block) || { block: row.block, score: 0, max: 0, lost: 0 };
+        item.score += row.score;
+        item.max += row.max;
+        item.lost += Math.max(row.max - row.score, 0);
+        blocks.set(row.block, item);
+      });
+      return [...blocks.values()].map(item => ({ ...item, percent: item.max ? (item.score / item.max) * 100 : 0 })).sort((a, b) => b.percent - a.percent);
+    }
+
+    function buildQuestions(records = currentAreaRecords()) {
+      const questions = new Map();
+      records.forEach(row => {
+        const key = `${row.block}||${row.question}`;
+        const item = questions.get(key) || { block: row.block, question: row.question, total: 0, correct: 0, errors: 0, score: 0, max: 0, lost: 0 };
+        item.total += 1;
+        item.score += row.score;
+        item.max += row.max;
+        item.lost += Math.max(row.max - row.score, 0);
+        if (row.score >= row.max) item.correct += 1;
+        if (row.score < row.max) item.errors += 1;
+        questions.set(key, item);
+      });
+      return [...questions.values()].map(item => ({
+        ...item,
+        correctRate: item.total ? (item.correct / item.total) * 100 : 0,
+        scoreRate: item.max ? (item.score / item.max) * 100 : 0,
+        errorRate: item.total ? (item.errors / item.total) * 100 : 0
+      })).sort((a, b) => a.correctRate - b.correctRate || b.lost - a.lost);
     }
 
     function buildAreas(records = activeRecords) {
-      const byArea = new Map();
-
+      const areas = new Map();
       records.forEach(row => {
         const area = getArea(row.name);
         if (isSecurity(area)) return;
-        const group = byArea.get(area) || { area, people: new Set(), score: 0, max: 0, lostPoints: 0 };
-        group.people.add(normalizeName(row.name));
-        group.score += row.score;
-        group.max += row.max;
-        group.lostPoints += Math.max(row.max - row.score, 0);
-        byArea.set(area, group);
+        const item = areas.get(area) || { area, people: new Set(), score: 0, max: 0, lost: 0 };
+        item.people.add(normalize(row.name));
+        item.score += row.score;
+        item.max += row.max;
+        item.lost += Math.max(row.max - row.score, 0);
+        areas.set(area, item);
       });
-
-      return [...byArea.values()].map(area => ({
-        ...area,
-        count: area.people.size,
-        percent: area.max ? (area.score / area.max) * 100 : 0
-      })).sort((a, b) => a.percent - b.percent || b.lostPoints - a.lostPoints);
+      return [...areas.values()].map(item => ({ ...item, count: item.people.size, percent: item.max ? (item.score / item.max) * 100 : 0 })).sort((a, b) => a.percent - b.percent);
     }
 
-    function buildExamSummary() {
-      function getCompletionStats() {
-
-  const totalExams =
-    [...new Set(rawData.examRecords.map(r => r.exam))].length;
-
-  const peopleList = analysisPeople();
-
-  const completed = peopleList.filter(person =>
-    person.examCount >= totalExams
-  );
-
-  const pending = peopleList.filter(person =>
-    person.examCount < totalExams
-  );
-
-  return {
-    totalExams,
-    completed,
-    pending
-  };
-}
-      const summaries = [];
+    function buildExamSummaries() {
       const exams = [...new Set(rawData.examRecords.map(row => row.exam))];
-
-      exams.forEach(examName => {
-        const records = rawData.examRecords.filter(row => row.exam === examName && !isSecurity(getArea(row.name)));
-        const peopleForExam = buildPeople(records).filter(person => !isSecurity(person.area) && person.examCount > 0);
-        const average = peopleForExam.length
-          ? peopleForExam.reduce((sum, person) => sum + person.percent, 0) / peopleForExam.length
-          : 0;
-        const approved = peopleForExam.filter(person => person.percent >= 70).length;
-        summaries.push({ exam: examName, average, people: peopleForExam.length, approved });
-      });
-
-      return summaries.sort((a, b) => a.average - b.average);
+      return exams.map(exam => {
+        const records = currentAreaRecords(rawData.examRecords.filter(row => row.exam === exam));
+        const persons = buildPeople(records).filter(person => allowedForGeneral(person) && person.examCount > 0);
+        const avg = persons.length ? persons.reduce((sum, person) => sum + person.percent, 0) / persons.length : 0;
+        const approved = persons.filter(person => person.percent >= 70).length;
+        const attempts = new Set(records.map(attemptKey)).size;
+        return { exam, records, persons, avg, approved, reprobados: persons.length - approved, attempts };
+      }).filter(item => item.persons.length || item.records.length);
     }
 
     function rebuildData() {
-      people = buildPeople();
-      visiblePeople = people.filter(person => !isSecurity(person.area));
-      questions = buildQuestions();
-      areas = buildAreas();
-    }
-
-    function selectedArea() {
-      return document.getElementById("areaFilter")?.value || "TODAS";
-    }
-
-    function matchesSelectedArea(nameOrArea) {
-      const area = rawData.staff.some(person => normalizeName(person.name) === normalizeName(nameOrArea))
-        ? getArea(nameOrArea)
-        : nameOrArea;
-      const selected = selectedArea();
-      return selected === "TODAS" || area === selected;
-    }
-
-    function analysisRecords() {
-      return activeRecords.filter(row => {
-        const area = getArea(row.name);
-        return !isSecurity(area) && matchesSelectedArea(area);
+      activeRecords = getSelectedExam() === "TODOS" ? rawData.examRecords : rawData.examRecords.filter(row => row.exam === getSelectedExam());
+      people = buildPeople(activeRecords);
+      visiblePeople = people.filter(allowedForGeneral);
+      analysisRecordsCache = currentAreaRecords(activeRecords).filter(row => {
+        const person = buildPeople([row]).find(item => normalize(item.name) === normalize(row.name));
+        return !person || !(person.examCount === 1 && person.examNames.every(isTrialExam));
       });
-    }
-
-    function analysisPeople() {
-      return visiblePeople.filter(person => matchesSelectedArea(person.area));
     }
 
     function renderMetrics() {
-      const currentPeople = analysisPeople();
-      const evaluated = currentPeople.filter(person => person.percent > 0);
+      const evaluated = visiblePeople.filter(person => person.percent > 0);
       const approved = evaluated.filter(person => person.percent >= 70).length;
-      const average = evaluated.length ? evaluated.reduce((sum, person) => sum + person.percent, 0) / evaluated.length : 0;
-      const securityCount = people.length - visiblePeople.length;
-
-       const completion = getCompletionStats();
-
-const metrics = [
-  [
-    "Promedio general",
-    `${formatter.format(average)}%`,
-    "No incluye Seguridad"
-  ],
-
-  [
-    "Staff analizado",
-    currentPeople.length,
-    `${securityCount} seguridad excluidos`
-  ],
-
-  [
-    "Completaron todos",
-    completion.completed.length,
-    `${completion.totalExams} exámenes requeridos`
-  ],
-
-  [
-    "Pendientes",
-    completion.pending.length,
-    "Les falta uno o más exámenes"
-  ],
-
-  [
-    "Aprobados",
-    approved,
-    `${formatter.format(
-      evaluated.length
-        ? approved / evaluated.length * 100
-        : 0
-    )}% de evaluados`
-  ]
-];
+      const reprobados = evaluated.length - approved;
+      const avg = evaluated.length ? evaluated.reduce((sum, person) => sum + person.percent, 0) / evaluated.length : 0;
+      const blocks = buildBlocks(analysisRecordsCache);
+      const strongest = blocks[0] || { block: "Sin datos", percent: 0 };
+      const weakest = [...blocks].sort((a, b) => a.percent - b.percent)[0] || { block: "Sin datos", percent: 0 };
+      const hardest = buildQuestions(analysisRecordsCache)[0] || { question: "Sin datos", correctRate: 0 };
+      const examsDone = new Set(analysisRecordsCache.map(attemptKey)).size;
+      const metrics = [
+        ["Promedio general", `${formatter.format(avg)}%`, "Excluye Seguridad y solo periodo de prueba"],
+        ["Colaboradores evaluados", evaluated.length, `${visiblePeople.length - evaluated.length} pendientes o en cero`],
+        ["Examenes realizados", examsDone, "Presentaciones unicas por persona, examen y fecha"],
+        ["Aprobados", approved, `${formatter.format(evaluated.length ? approved / evaluated.length * 100 : 0)}% del filtro`],
+        ["Reprobados", reprobados, `${formatter.format(evaluated.length ? reprobados / evaluated.length * 100 : 0)}% del filtro`],
+        ["Bloque mas fuerte", strongest.block, `${formatter.format(strongest.percent)}% promedio`],
+        ["Bloque mas debil", weakest.block, `${formatter.format(weakest.percent)}% promedio`],
+        ["Pregunta mas fallada", hardest.question, `${formatter.format(100 - hardest.correctRate)}% error`]
+      ];
+      document.getElementById("metrics").innerHTML = metrics.map(([label, value, note]) => `<article class="metric"><span>${label}</span><strong>${value}</strong><small>${note}</small></article>`).join("");
+    }
 
     function renderSummary() {
-      const currentPeople = analysisPeople();
-      const evaluated = currentPeople.filter(person => person.percent > 0);
-      const best = currentPeople[0] || { name: "Sin datos", percent: 0 };
+      const best = visiblePeople[0] || { name: "Sin datos", percent: 0 };
+      const evaluated = visiblePeople.filter(person => person.percent > 0);
       const worst = [...evaluated].sort((a, b) => a.percent - b.percent)[0] || { name: "Sin datos", percent: 0 };
-      const currentAreas = selectedArea() === "TODAS" ? areas : areas.filter(area => area.area === selectedArea());
-      const weakestArea = currentAreas[0] || { area: "Sin datos", percent: 0 };
-      const currentQuestions = buildQuestions(analysisRecords());
-      const hardestQuestion = currentQuestions[0] || { question: "Sin datos", errorRate: 0 };
-
+      const exam = buildExamSummaries().sort((a, b) => a.avg - b.avg)[0] || { exam: "Sin datos", avg: 0 };
+      const area = buildAreas(activeRecords).find(item => getSelectedArea() === "TODAS" || item.area === getSelectedArea()) || { area: "Sin datos", percent: 0 };
       const cards = [
-        [best.name, `${formatter.format(best.percent)}%`, "Mejor puntaje del filtro"],
-        [worst.name, `${formatter.format(worst.percent)}%`, "Puntaje mas bajo evaluado"],
-        [weakestArea.area, `${formatter.format(weakestArea.percent)}%`, "Area con mayor necesidad"],
-        [hardestQuestion.question, `${formatter.format(hardestQuestion.errorRate)}%`, "Pregunta mas fallada"]
+        [best.name, `${formatter.format(best.percent)}%`, "Mejor colaborador"],
+        [worst.name, `${formatter.format(worst.percent)}%`, "Requiere mayor apoyo"],
+        [exam.exam, `${formatter.format(exam.avg)}%`, "Examen mas dificil"],
+        [area.area, `${formatter.format(area.percent)}%`, "Area con seguimiento"]
       ];
-
-      document.getElementById("summary").innerHTML = cards.map(([name, value, label]) => `
-        <div class="card">
-          <div>
-            <strong>${name}</strong>
-            <small>${label}</small>
-          </div>
-          <span class="value">${value}</span>
-        </div>
-      `).join("");
+      document.getElementById("summary").innerHTML = cards.map(([title, value, note]) => `<div class="card"><div><strong>${title}</strong><small>${note}</small></div><span class="value">${value}</span></div>`).join("");
     }
 
-    function renderRanking(list = visiblePeople) {
-      const query = normalizeName(document.getElementById("search").value);
-      const selectedArea = document.getElementById("areaFilter").value;
-      const filtered = list.filter(person => {
-        const matchesText = normalizeName(person.name).includes(query) || normalizeName(person.area).includes(query);
-        const matchesArea = selectedArea === "TODAS" || person.area === selectedArea;
-        return matchesText && matchesArea;
-      });
-
+    function renderRanking() {
+      const query = normalize(document.getElementById("search").value);
+      const filtered = visiblePeople.filter(person => normalize(person.name).includes(query) || normalize(person.area).includes(query));
       const bars = document.getElementById("rankingBars");
       const table = document.getElementById("rankingTable");
-
       if (!filtered.length) {
         bars.innerHTML = "";
-        table.innerHTML = `<tr><td colspan="6" class="empty">No hay resultados para ese filtro.</td></tr>`;
+        table.innerHTML = `<tr><td colspan="6" class="empty">No hay resultados para este filtro.</td></tr>`;
         return;
       }
-
       bars.innerHTML = filtered.slice(0, 16).map(person => {
         const status = statusFor(person.percent);
-        return `
-          <div class="bar-row">
-            <div class="label" title="${person.name}">${person.name}</div>
-            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(person.percent, 2)}%"></div></div>
-            <div class="value">${formatter.format(person.percent)}%</div>
-          </div>
-        `;
+        return `<div class="bar-row"><div class="label" title="${person.name}">${person.name}</div><div class="track"><div class="bar ${status.className}" style="width:${Math.max(person.percent, 2)}%"></div></div><div class="value">${formatter.format(person.percent)}%</div></div>`;
       }).join("");
-
       table.innerHTML = filtered.map((person, index) => {
         const status = statusFor(person.percent);
-        return `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${person.name}</td>
-            <td>${person.area}</td>
-            <td>${formatter.format(person.percent)}%</td>
-            <td>${person.examCount}</td>
-            <td><span class="pill ${status.className}">${status.label}</span></td>
-          </tr>
-        `;
+        return `<tr><td>${index + 1}</td><td>${person.name}</td><td>${person.area}</td><td class="num">${formatter.format(person.percent)}%</td><td class="num">${person.examCount}</td><td><span class="pill ${status.className}">${status.label}</span></td></tr>`;
       }).join("");
     }
 
-    function renderAreas() {
-      const target = document.getElementById("areaBars");
-      const currentAreas = selectedArea() === "TODAS" ? areas : areas.filter(area => area.area === selectedArea());
-      if (!currentAreas.length) {
-        target.innerHTML = `<div class="empty">No hay areas para este filtro.</div>`;
+    function renderBars(id, items, labelKey = "label") {
+      const target = document.getElementById(id);
+      if (!items.length) {
+        target.innerHTML = `<div class="empty">No hay datos para este filtro.</div>`;
         return;
       }
-
-      target.innerHTML = currentAreas.map(area => {
-        const status = statusFor(area.percent);
-        const lostPercent = area.max ? (area.lostPoints / area.max) * 100 : 0;
-        return `
-          <div class="bar-row">
-            <div class="label" title="${area.area}">${area.area}</div>
-            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(area.percent, 2)}%"></div></div>
-            <div class="value">${formatter.format(area.percent)}%</div>
-          </div>
-          <div class="muted-line">${area.count} personas - ${formatter.format(lostPercent)}% perdido (${formatter.format(area.lostPoints)} de ${formatter.format(area.max)} pts)</div>
-        `;
+      target.innerHTML = items.map(item => {
+        const status = statusFor(item.percent);
+        return `<div class="bar-row"><div class="label" title="${item[labelKey]}">${item[labelKey]}</div><div class="track"><div class="bar ${status.className}" style="width:${Math.max(item.percent, 2)}%"></div></div><div class="value">${formatter.format(item.percent)}%</div></div>${item.note ? `<div class="muted-line">${item.note}</div>` : ""}`;
       }).join("");
     }
 
     function renderExamSummary() {
-      const selected = selectedArea();
-      const summaries = buildExamSummary().map(summary => {
-        if (selected === "TODAS") return summary;
-        const records = rawData.examRecords.filter(row => row.exam === summary.exam && getArea(row.name) === selected && !isSecurity(selected));
-        const peopleForExam = buildPeople(records).filter(person => !isSecurity(person.area) && person.examCount > 0);
-        const average = peopleForExam.length
-          ? peopleForExam.reduce((sum, person) => sum + person.percent, 0) / peopleForExam.length
-          : 0;
-        const approved = peopleForExam.filter(person => person.percent >= 70).length;
-        return { exam: summary.exam, average, people: peopleForExam.length, approved };
-      }).filter(summary => selected === "TODAS" || summary.people > 0);
+      const summaries = buildExamSummaries();
+      document.getElementById("examSummary").innerHTML = summaries.map(item => `<div class="card"><div><strong>${item.exam}</strong><small>${item.attempts} veces presentado - ${item.approved} aprobados - ${item.reprobados} reprobados</small></div><span class="value">${formatter.format(item.avg)}%</span></div>`).join("");
+      renderBars("learningEvolution", summaries.map(item => ({ label: item.exam, percent: item.avg, note: `${item.persons.length} evaluados` })));
+    }
 
-      document.getElementById("examSummary").innerHTML = summaries.map(exam => `
-        <div class="card">
-          <div>
-            <strong>${exam.exam}</strong>
-            <small>${exam.people} evaluados - ${exam.approved} aprobados</small>
-          </div>
-          <span class="value">${formatter.format(exam.average)}%</span>
-        </div>
-      `).join("");
+    function renderBlocks() {
+      renderBars("blockPerformance", buildBlocks(analysisRecordsCache).map(item => ({ label: item.block, percent: item.percent, note: `${formatter.format(item.lost)} puntos perdidos` })));
+    }
+
+    function renderHeatmap() {
+      const exams = [...new Set(rawData.examRecords.map(row => row.exam))];
+      const areas = [...new Set(rawData.staff.map(person => person.area).filter(area => area && !isSecurity(area)))].sort((a, b) => a.localeCompare(b));
+      const rows = areas.map(area => {
+        const cells = exams.map(exam => {
+          const records = rawData.examRecords.filter(row => row.exam === exam && getArea(row.name) === area);
+          const score = records.reduce((sum, row) => sum + row.score, 0);
+          const max = records.reduce((sum, row) => sum + row.max, 0);
+          const percent = max ? (score / max) * 100 : 0;
+          const status = statusFor(percent).className;
+          return `<td class="cell-${status === "good" ? "good" : status === "mid" ? "mid" : "bad"}">${max ? formatter.format(percent) + "%" : "-"}</td>`;
+        }).join("");
+        return `<tr><th>${area}</th>${cells}</tr>`;
+      }).join("");
+      document.getElementById("heatmap").innerHTML = `<table><thead><tr><th>Area</th>${exams.map(exam => `<th>${exam}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderDistribution() {
+      const ranges = [
+        { label: "0-59", min: 0, max: 59.999 },
+        { label: "60-68", min: 60, max: 68.999 },
+        { label: "69-84", min: 69, max: 84.999 },
+        { label: "85-100", min: 85, max: 100 }
+      ];
+      const maxCount = Math.max(...ranges.map(range => visiblePeople.filter(person => person.percent >= range.min && person.percent <= range.max).length), 1);
+      renderBars("distribution", ranges.map(range => {
+        const count = visiblePeople.filter(person => person.percent >= range.min && person.percent <= range.max).length;
+        return { label: range.label, percent: (count / maxCount) * 100, note: `${count} colaboradores` };
+      }));
     }
 
     function buildPersonTrend(name) {
-      const records = rawData.examRecords.filter(row => normalizeName(row.name) === normalizeName(name));
-      const peopleMap = buildPersonExamMap(records);
-      const person = [...peopleMap.values()][0];
+      const map = buildPersonExamMap(rawData.examRecords.filter(row => normalize(row.name) === normalize(name)));
+      const person = [...map.values()][0];
       if (!person) return [];
-
-      return [...person.exams.values()].map(exam => ({
-        ...exam,
-        percent: examPercent(exam)
-      })).sort((a, b) => a.exam.localeCompare(b.exam, undefined, { numeric: true }));
-    }
-
-    function populatePersonTrendFilter() {
-      const select = document.getElementById("personTrendFilter");
-      const selected = select.value;
-      const names = [...new Set([
-        ...rawData.staff.map(person => person.name),
-        ...rawData.examRecords.map(row => row.name)
-      ])].filter(Boolean).sort((a, b) => a.localeCompare(b));
-
-      select.innerHTML = names.map(name => `<option value="${name}">${name}</option>`).join("");
-      select.value = names.includes(selected) ? selected : names[0] || "";
+      return [...person.exams.values()].map(exam => ({ ...exam, percent: examPercent(exam) })).sort((a, b) => a.exam.localeCompare(b.exam, undefined, { numeric: true }));
     }
 
     function renderPersonTrend() {
-      const target = document.getElementById("personTrendBars");
       const name = document.getElementById("personTrendFilter").value;
       const trend = buildPersonTrend(name);
-
-      if (!trend.length) {
-        target.innerHTML = `<div class="empty">No hay examenes para esta persona.</div>`;
-        return;
-      }
-
-      target.innerHTML = trend.map(item => {
-        const status = statusFor(item.percent);
-        return `
-          <div class="bar-row">
-            <div class="label" title="${item.exam}">${item.exam}</div>
-            <div class="track"><div class="bar ${status.className}" style="width:${Math.max(item.percent, 2)}%"></div></div>
-            <div class="value">${formatter.format(item.percent)}%</div>
-          </div>
-          <div class="muted-line">${formatter.format(item.score)} de ${formatter.format(item.max)} pts - ${formatter.format(item.lost)} pts perdidos</div>
-        `;
-      }).join("");
+      renderBars("personTrendBars", trend.map(item => ({ label: item.exam, percent: item.percent, note: `${formatter.format(item.score)} de ${formatter.format(item.max)} pts - ${formatter.format(item.lost)} pts perdidos` })));
     }
 
-    function renderQuestions(list = questions) {
-      const target = document.getElementById("questions");
-      if (!list.length) {
-        target.innerHTML = `<div class="empty">No hay preguntas para ese filtro.</div>`;
-        return;
-      }
+    function renderSignals() {
+      const allPeople = buildPeople(rawData.examRecords).filter(person => !isSecurity(person.area));
+      const improvements = allPeople.map(person => {
+        const trend = buildPersonTrend(person.name).filter(item => !isTrialExam(item.exam));
+        const first = trend[0]?.percent || 0;
+        const last = trend[trend.length - 1]?.percent || 0;
+        return { ...person, improvement: trend.length > 1 ? last - first : 0 };
+      });
+      const topImprovers = [...improvements].sort((a, b) => b.improvement - a.improvement).slice(0, 5);
+      const support = allPeople.filter(person => person.percent > 0 && person.percent < 69).sort((a, b) => a.percent - b.percent).slice(0, 6);
+      document.getElementById("peopleSignals").innerHTML = `
+        <div class="note"><strong>Mayor mejora:</strong> ${topImprovers.map(person => `${person.name} (${formatter.format(person.improvement)} pts)`).join(", ") || "Sin datos"}</div>
+        ${support.map(person => `<div class="card"><div><strong>${person.name}</strong><small>${person.area} - requiere acompanamiento</small></div><span class="value">${formatter.format(person.percent)}%</span></div>`).join("")}
+      `;
+    }
 
-      target.innerHTML = list.slice(0, 18).map((question, index) => `
-        <div class="question">
-          <strong>${index + 1}. ${question.question}</strong>
-          <span>${question.block} - ${question.errors}/${question.total} con error - ${formatter.format(question.errorRate)}% error - ${formatter.format(question.lostPoints)} pts perdidos</span>
-        </div>
-      `).join("");
+    function renderQuestions() {
+      const selectedBlock = document.getElementById("blockFilter").value;
+      const records = selectedBlock === "TODOS" ? analysisRecordsCache : analysisRecordsCache.filter(row => row.block === selectedBlock);
+      const items = buildQuestions(records).slice(0, 10);
+      document.getElementById("questions").innerHTML = items.map((item, index) => `<div class="question"><strong>${index + 1}. ${item.question}</strong><span>${item.block} - ${formatter.format(item.correctRate)}% acierto - ${item.errors}/${item.total} con error - ${formatter.format(item.lost)} pts perdidos</span></div>`).join("") || `<div class="empty">No hay preguntas para este filtro.</div>`;
+    }
+
+    function renderAlerts() {
+      const blocks = buildBlocks(analysisRecordsCache);
+      const red = blocks.filter(item => item.percent < 69);
+      const orange = blocks.filter(item => item.percent >= 69 && item.percent < 85);
+      const green = blocks.filter(item => item.percent >= 86);
+      document.getElementById("alerts").innerHTML = [
+        ["Rojo", red, "bad"],
+        ["Naranja", orange, "mid"],
+        ["Verde", green, "good"]
+      ].map(([label, list, cls]) => `<div class="card"><div><strong>${label}</strong><small>${list.map(item => `${item.block} ${formatter.format(item.percent)}%`).join(", ") || "Sin bloques"}</small></div><span class="pill ${cls}">${list.length}</span></div>`).join("");
     }
 
     function populateFilters() {
-      const selectedExam = document.getElementById("examFilter").value;
-      const selectedRankingArea = document.getElementById("areaFilter").value;
-      const selectedQuestionArea = document.getElementById("questionAreaFilter").value;
-      const selectedBlock = document.getElementById("blockFilter").value;
-
+      const examValue = getSelectedExam();
+      const areaValue = getSelectedArea();
+      const blockValue = document.getElementById("blockFilter").value;
+      const personValue = document.getElementById("personTrendFilter").value;
       const exams = [...new Set(rawData.examRecords.map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      document.getElementById("examFilter").innerHTML = `<option value="TODOS">Todos los examenes</option>` + exams.map(exam => `<option value="${exam}">${exam}</option>`).join("");
-      if (selectedExam && (selectedExam === "TODOS" || exams.includes(selectedExam))) {
-        document.getElementById("examFilter").value = selectedExam;
-      }
-
-      const areasList = [...new Set(visiblePeople.map(person => person.area))].filter(Boolean).sort((a, b) => a.localeCompare(b));
-      document.getElementById("areaFilter").innerHTML = `<option value="TODAS">Todas las areas</option>` + areasList.map(area => `<option value="${area}">${area}</option>`).join("");
-      document.getElementById("questionAreaFilter").innerHTML = `<option value="TODAS">Todas las areas</option>` + areasList.map(area => `<option value="${area}">${area}</option>`).join("");
-      if (selectedRankingArea && (selectedRankingArea === "TODAS" || areasList.includes(selectedRankingArea))) {
-        document.getElementById("areaFilter").value = selectedRankingArea;
-      }
-      if (selectedQuestionArea && (selectedQuestionArea === "TODAS" || areasList.includes(selectedQuestionArea))) {
-        document.getElementById("questionAreaFilter").value = selectedQuestionArea;
-      }
-
+      const areas = [...new Set(rawData.staff.map(person => person.area).filter(area => area && !isSecurity(area)))].sort((a, b) => a.localeCompare(b));
       const blocks = [...new Set(activeRecords.map(row => row.block))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      document.getElementById("blockFilter").innerHTML = `<option value="TODOS">Todos los bloques</option>` + blocks.map(block => `<option value="${block}">${block}</option>`).join("");
-      if (selectedBlock && (selectedBlock === "TODOS" || blocks.includes(selectedBlock))) {
-        document.getElementById("blockFilter").value = selectedBlock;
-      }
-
-      populatePersonTrendFilter();
-    }
-
-    function applyQuestionFilters() {
-      const questionArea = document.getElementById("questionAreaFilter").value;
-      const globalArea = selectedArea();
-      const effectiveArea = questionArea === "TODAS" ? globalArea : questionArea;
-      const selectedBlock = document.getElementById("blockFilter").value;
-      const filteredRecords = activeRecords.filter(row => {
-        const area = getArea(row.name);
-        if (isSecurity(area)) return false;
-        const matchesArea = effectiveArea === "TODAS" || area === effectiveArea;
-        const matchesBlock = selectedBlock === "TODOS" || row.block === selectedBlock;
-        return matchesArea && matchesBlock;
-      });
-
-      renderQuestions(buildQuestions(filteredRecords));
+      const peopleNames = [...new Set([...rawData.staff.map(person => person.name), ...rawData.examRecords.map(row => row.name)])].filter(Boolean).sort((a, b) => a.localeCompare(b));
+      document.getElementById("examFilter").innerHTML = `<option value="TODOS">Todos los examenes</option>${exams.map(exam => `<option value="${exam}">${exam}</option>`).join("")}`;
+      document.getElementById("areaFilter").innerHTML = `<option value="TODAS">Todas las areas</option>${areas.map(area => `<option value="${area}">${area}</option>`).join("")}`;
+      document.getElementById("blockFilter").innerHTML = `<option value="TODOS">Todos los bloques</option>${blocks.map(block => `<option value="${block}">${block}</option>`).join("")}`;
+      document.getElementById("personTrendFilter").innerHTML = peopleNames.map(name => `<option value="${name}">${name}</option>`).join("");
+      if (examValue === "TODOS" || exams.includes(examValue)) document.getElementById("examFilter").value = examValue;
+      if (areaValue === "TODAS" || areas.includes(areaValue)) document.getElementById("areaFilter").value = areaValue;
+      if (blockValue === "TODOS" || blocks.includes(blockValue)) document.getElementById("blockFilter").value = blockValue;
+      if (peopleNames.includes(personValue)) document.getElementById("personTrendFilter").value = personValue;
     }
 
     function renderAll() {
+      rebuildData();
+      populateFilters();
       renderMetrics();
       renderSummary();
       renderRanking();
-      renderAreas();
       renderExamSummary();
+      renderBlocks();
+      renderHeatmap();
+      renderDistribution();
       renderPersonTrend();
-      applyQuestionFilters();
+      renderSignals();
+      renderQuestions();
+      renderAlerts();
+      document.getElementById("rankingDescription").textContent = getSelectedExam() === "TODOS"
+        ? "Ranking acumulado de todos los examenes. Seguridad y solo periodo de prueba no aparecen."
+        : `Ranking del examen ${getSelectedExam()}. Seguridad no aparece.`;
     }
 
-    function applyMainFilters() {
-      const selectedExam = document.getElementById("examFilter").value;
-      rankingMode = document.getElementById("rankingMode").value;
-      activeRecords = selectedExam === "TODOS"
-        ? rawData.examRecords
-        : rawData.examRecords.filter(row => row.exam === selectedExam);
-
-      document.getElementById("rankingDescription").textContent = selectedExam === "TODOS"
-        ? (rankingMode === "TOTAL" ? "Promedio total acumulado. Seguridad no aparece en este ranking." : "Promedio simple de los examenes realizados. Seguridad no aparece en este ranking.")
-        : `Ranking del examen: ${selectedExam}. Seguridad no aparece en este ranking.`;
-
-      rebuildData();
-      populateFilters();
-      renderAll();
-    }
-
-    document.getElementById("examFilter").addEventListener("change", applyMainFilters);
-    document.getElementById("rankingMode").addEventListener("change", applyMainFilters);
-    document.getElementById("search").addEventListener("input", renderRanking);
+    document.getElementById("examFilter").addEventListener("change", renderAll);
     document.getElementById("areaFilter").addEventListener("change", renderAll);
-    document.getElementById("questionAreaFilter").addEventListener("change", applyQuestionFilters);
-    document.getElementById("blockFilter").addEventListener("change", applyQuestionFilters);
+    document.getElementById("rankingMode").addEventListener("change", () => { rankingMode = document.getElementById("rankingMode").value; renderAll(); });
+    document.getElementById("search").addEventListener("input", renderRanking);
+    document.getElementById("blockFilter").addEventListener("change", renderQuestions);
     document.getElementById("personTrendFilter").addEventListener("change", renderPersonTrend);
 
     loadSheetData()
       .then(data => {
         rawData = data;
         activeRecords = rawData.examRecords;
-        rebuildData();
-        populateFilters();
         renderAll();
       })
       .catch(error => {
