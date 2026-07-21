@@ -384,7 +384,7 @@
       <div class="head">
         <div>
           <h2>Filtros principales</h2>
-          <p>Los examenes de periodo de prueba se analizan aparte para no afectar el promedio general.</p>
+          <p>Diagnostico y periodo de prueba se analizan aparte para no afectar el promedio general.</p>
         </div>
         <div class="controls">
           <select id="examFilter"></select>
@@ -419,7 +419,7 @@
                 <th>Nombre</th>
                 <th>Area</th>
                 <th>Promedio</th>
-                <th>Examenes</th>
+                <th>Temas / intentos</th>
                 <th>Estado</th>
               </tr>
             </thead>
@@ -445,7 +445,7 @@
           <div class="head">
             <div>
               <h2>Alertas automaticas</h2>
-              <p>Punto rojo: 69% o menos. Punto naranja: 70% a 80%. Punto verde: 81% a 100%.</p>
+              <p>Por examen: bloque mas bajo, promedio y bloque mas alto.</p>
             </div>
           </div>
           <div class="content">
@@ -457,7 +457,7 @@
           <div class="head">
             <div>
               <h2>Comportamiento por persona</h2>
-              <p>Evolucion por examen, incluyendo Seguridad y periodo de prueba.</p>
+              <p>Evolucion por examen, incluyendo Seguridad, diagnostico y periodo de prueba.</p>
             </div>
             <div class="controls">
               <select id="personTrendFilter"></select>
@@ -498,7 +498,7 @@
           <div class="head">
             <div>
               <h2>Rendimiento por bloque</h2>
-              <p>Bloques fuertes y debiles con color de alerta.</p>
+              <p>Bloques que mas requieren atencion en el filtro actual.</p>
             </div>
           </div>
           <div class="content">
@@ -628,10 +628,22 @@
       return value.includes("PERIODO") || value.includes("PRUEBA");
     }
 
+    function isDiagnosticExam(exam) {
+      return normalize(exam).includes("DIAGNOSTICO");
+    }
+
+    function isSpecialExam(exam) {
+      return isTrialExam(exam) || isDiagnosticExam(exam);
+    }
+
+    function passThreshold(exam) {
+      return isSpecialExam(exam) ? 65 : 70;
+    }
+
     function statusFor(score) {
-      if (score >= 81) return { label: "Fuerte", className: "good" };
-      if (score > 69) return { label: "Alerta", className: "mid" };
-      return { label: "Critico", className: "bad" };
+      if (score >= 80) return { label: "Excelente", className: "good" };
+      if (score >= 70) return { label: "Medio", className: "mid" };
+      return { label: "Alerta", className: "bad" };
     }
 
     function parseStaffCsv(text) {
@@ -645,6 +657,7 @@
       const rows = parseCsv(text).filter(row => row.some(Boolean));
       const headers = (rows[0] || []).map(normalizeHeader);
       const find = label => headers.indexOf(label);
+      const findIncludes = (...parts) => headers.findIndex(header => parts.every(part => header.includes(part)));
       const maxIndex = headers.findIndex(header => header === "PUNTAJE MAXIMO");
       const examIndex = find("EXAMEN");
       const nameIndex = find("NOMBRE");
@@ -652,19 +665,29 @@
       const questionIndex = find("PREGUNTA");
       const answerIndex = find("RESPUESTA");
       const scoreIndex = find("PUNTAJE OBTENIDO");
+      const secondScoreIndex = find("SEGUNDO PUNTAJE") >= 0 ? find("SEGUNDO PUNTAJE") : findIncludes("SEGUNDO", "PUNTAJE");
       const averageIndex = find("PROMEDIOS POR EXAMEN");
       const dateIndex = find("FECHA");
-      return rows.slice(1).map(row => ({
-        exam: clean(row[examIndex]) || "Examen actual",
-        name: clean(row[nameIndex]),
-        block: clean(row[blockIndex]),
-        question: clean(row[questionIndex]),
-        answer: clean(row[answerIndex]),
-        max: numberValue(row[maxIndex]),
-        score: numberValue(row[scoreIndex]),
-        sheetAverage: numberValue(row[averageIndex]),
-        date: clean(row[dateIndex])
-      })).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
+      return rows.slice(1).flatMap(row => {
+        const base = {
+          exam: clean(row[examIndex]) || "Examen actual",
+          name: clean(row[nameIndex]),
+          block: clean(row[blockIndex]),
+          question: clean(row[questionIndex]),
+          answer: clean(row[answerIndex]),
+          max: numberValue(row[maxIndex]),
+          score: numberValue(row[scoreIndex]),
+          sheetAverage: numberValue(row[averageIndex]),
+          date: clean(row[dateIndex]),
+          attempt: 1
+        };
+        const records = [base];
+        const secondRaw = secondScoreIndex >= 0 ? clean(row[secondScoreIndex]) : "";
+        if (secondRaw !== "") {
+          records.push({ ...base, score: numberValue(secondRaw), sheetAverage: 0, attempt: 2 });
+        }
+        return records;
+      }).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
     }
 
     async function loadSheetData() {
@@ -684,7 +707,7 @@
     }
 
     function attemptKey(row) {
-      return `${normalize(row.name)}||${row.exam}||${row.date || "SIN FECHA"}`;
+      return `${normalize(row.name)}||${row.exam}||${row.date || "SIN FECHA"}||${row.attempt || 1}`;
     }
 
     function getSelectedArea() {
@@ -700,11 +723,11 @@
     }
 
     function primaryRecords(records = rawData.examRecords) {
-      return records.filter(row => !isTrialExam(row.exam));
+      return records.filter(row => !isSpecialExam(row.exam));
     }
 
-    function trialRecords(records = rawData.examRecords) {
-      return records.filter(row => isTrialExam(row.exam));
+    function specialRecords(records = rawData.examRecords) {
+      return records.filter(row => isSpecialExam(row.exam));
     }
 
     function allowedForGeneral(person) {
@@ -713,7 +736,7 @@
     }
 
     function examPercent(exam) {
-      if (exam.sheetAverages.length) {
+      if (!exam.hasSecondAttempt && exam.sheetAverages.length) {
         const unique = [...new Set(exam.sheetAverages.map(value => Number(value.toFixed(2))))];
         return unique.reduce((sum, value) => sum + value, 0) / unique.length;
       }
@@ -725,11 +748,13 @@
       records.forEach(row => {
         const key = normalize(row.name);
         const person = byPerson.get(key) || { name: row.name, area: getArea(row.name), score: 0, max: 0, exams: new Map() };
-        const exam = person.exams.get(row.exam) || { exam: row.exam, score: 0, max: 0, lost: 0, sheetAverages: [] };
+        const exam = person.exams.get(row.exam) || { exam: row.exam, score: 0, max: 0, lost: 0, sheetAverages: [], attempts: new Set(), hasSecondAttempt: false };
         exam.score += row.score;
         exam.max += row.max;
         exam.lost += Math.max(row.max - row.score, 0);
-        if (row.sheetAverage > 0) exam.sheetAverages.push(row.sheetAverage);
+        exam.attempts.add(row.attempt || 1);
+        if ((row.attempt || 1) > 1) exam.hasSecondAttempt = true;
+        if ((row.attempt || 1) === 1 && row.sheetAverage > 0) exam.sheetAverages.push(row.sheetAverage);
         person.score += row.score;
         person.max += row.max;
         person.exams.set(row.exam, exam);
@@ -745,11 +770,12 @@
     function buildPeople(records = activeRecords) {
       return [...buildPersonExamMap(records).values()].map(person => {
         const examItems = [...person.exams.values()];
-        const examPercents = examItems.map(examPercent).filter(value => value > 0);
+        const examPercents = examItems.map(examPercent);
         const examAverage = examPercents.length ? examPercents.reduce((sum, value) => sum + value, 0) / examPercents.length : 0;
         const totalPercent = person.max ? (person.score / person.max) * 100 : 0;
         const percent = rankingMode === "PROMEDIO_EXAMENES" ? examAverage : totalPercent;
-        return { ...person, examCount: examPercents.length, examNames: examItems.map(item => item.exam), examAverage, totalPercent, percent };
+        const attemptCount = new Set(records.filter(row => normalize(row.name) === normalize(person.name)).map(attemptKey)).size;
+        return { ...person, examCount: examPercents.length, attemptCount, examNames: examItems.map(item => item.exam), examAverage, totalPercent, percent };
       }).sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name));
     }
 
@@ -817,7 +843,7 @@
         const records = currentAreaRecords(recordsSource.filter(row => row.exam === exam));
         const persons = buildPeople(records).filter(person => allowedForGeneral(person) && person.examCount > 0);
         const avg = persons.length ? persons.reduce((sum, person) => sum + person.percent, 0) / persons.length : 0;
-        const approved = persons.filter(person => person.percent >= 70).length;
+        const approved = persons.filter(person => person.percent >= passThreshold(exam)).length;
         const attempts = new Set(records.map(attemptKey)).size;
         return { exam, records, persons, avg, approved, reprobados: persons.length - approved, attempts };
       }).filter(item => item.persons.length || item.records.length);
@@ -826,13 +852,13 @@
     function rebuildData() {
       activeRecords = isGeneralView() ? primaryRecords(rawData.examRecords) : rawData.examRecords.filter(row => row.exam === getSelectedExam());
       people = buildPeople(activeRecords);
-      visiblePeople = people.filter(allowedForGeneral);
+      visiblePeople = people.filter(person => allowedForGeneral(person) && person.examCount > 0);
       analysisRecordsCache = currentAreaRecords(activeRecords);
     }
 
     function renderMetrics() {
-      const evaluated = visiblePeople.filter(person => person.percent > 0);
-      const approved = evaluated.filter(person => person.percent >= 70).length;
+      const evaluated = visiblePeople;
+      const approved = evaluated.filter(person => person.percent >= (isSpecialExam(getSelectedExam()) ? 65 : 70)).length;
       const reprobados = evaluated.length - approved;
       const avg = evaluated.length ? evaluated.reduce((sum, person) => sum + person.percent, 0) / evaluated.length : 0;
       const blocks = buildBlocks(analysisRecordsCache);
@@ -841,8 +867,8 @@
       const hardest = buildQuestions(analysisRecordsCache)[0] || { question: "Sin datos", correctRate: 0 };
       const examsDone = new Set(analysisRecordsCache.map(attemptKey)).size;
       const metrics = [
-        ["Promedio general", `${formatter.format(avg)}%`, "Excluye Seguridad y periodo de prueba"],
-        ["Colaboradores evaluados", evaluated.length, `${visiblePeople.length - evaluated.length} pendientes o en cero`],
+        ["Promedio general", `${formatter.format(avg)}%`, "Excluye Seguridad, diagnostico y periodo de prueba"],
+        ["Colaboradores evaluados", evaluated.length, "Personas con datos en el filtro"],
         ["Examenes realizados", examsDone, "Presentaciones unicas por persona, examen y fecha"],
         ["Aprobados", approved, `${formatter.format(evaluated.length ? approved / evaluated.length * 100 : 0)}% del filtro`],
         ["Reprobados", reprobados, `${formatter.format(evaluated.length ? reprobados / evaluated.length * 100 : 0)}% del filtro`],
@@ -855,7 +881,7 @@
 
     function renderSummary() {
       const best = visiblePeople[0] || { name: "Sin datos", percent: 0 };
-      const evaluated = visiblePeople.filter(person => person.percent > 0);
+      const evaluated = visiblePeople;
       const worst = [...evaluated].sort((a, b) => a.percent - b.percent)[0] || { name: "Sin datos", percent: 0 };
       const exam = buildExamSummaries(activeRecords).sort((a, b) => a.avg - b.avg)[0] || { exam: "Sin datos", avg: 0 };
       const area = buildAreas(activeRecords).find(item => getSelectedArea() === "TODAS" || item.area === getSelectedArea()) || { area: "Sin datos", percent: 0 };
@@ -884,7 +910,7 @@
       }).join("");
       table.innerHTML = filtered.map((person, index) => {
         const status = statusFor(person.percent);
-        return `<tr><td>${index + 1}</td><td>${person.name}</td><td>${person.area}</td><td class="num">${formatter.format(person.percent)}%</td><td class="num">${person.examCount}</td><td><span class="pill ${status.className}">${status.label}</span></td></tr>`;
+        return `<tr><td>${index + 1}</td><td>${person.name}</td><td>${person.area}</td><td class="num">${formatter.format(person.percent)}%</td><td class="num">${person.examCount} / ${person.attemptCount}</td><td><span class="pill ${status.className}">${status.label}</span></td></tr>`;
       }).join("");
     }
 
@@ -904,14 +930,15 @@
       const summaries = buildExamSummaries();
       document.getElementById("examSummary").innerHTML = summaries.map(item => `<div class="card"><div><strong>${item.exam}</strong><small>${item.attempts} veces presentado - ${item.approved} aprobados - ${item.reprobados} reprobados</small></div><span class="value">${formatter.format(item.avg)}%</span></div>`).join("");
       renderBars("learningEvolution", summaries.map(item => ({ label: item.exam, percent: item.avg, note: `${item.persons.length} evaluados` })));
-      const trials = buildExamSummaries(trialRecords(rawData.examRecords));
+      const trials = buildExamSummaries(specialRecords(rawData.examRecords));
       document.getElementById("trialSummary").innerHTML = trials.length
-        ? `<div class="note"><strong>Periodo de prueba:</strong> se muestra aparte y no suma al ranking general.</div>${trials.map(item => `<div class="card"><div><strong>${item.exam}</strong><small>${item.attempts} veces presentado - ${item.approved} aprobados - ${item.reprobados} reprobados</small></div><span class="value">${formatter.format(item.avg)}%</span></div>`).join("")}`
+        ? `<div class="note"><strong>Examenes especiales:</strong> diagnostico y periodo de prueba se muestran aparte y no suman al ranking general. Se reprueba por debajo de 65%.</div>${trials.map(item => `<div class="card"><div><strong>${item.exam}</strong><small>${item.attempts} veces presentado - ${item.approved} aprobados - ${item.reprobados} reprobados</small></div><span class="value">${formatter.format(item.avg)}%</span></div>`).join("")}`
         : "";
     }
 
     function renderBlocks() {
-      renderBars("blockPerformance", buildBlocks(analysisRecordsCache).map(item => ({ label: item.block, percent: item.percent, note: `${formatter.format(item.lost)} puntos perdidos` })));
+      const weakestBlocks = [...buildBlocks(analysisRecordsCache)].sort((a, b) => a.percent - b.percent).slice(0, 8);
+      renderBars("blockPerformance", weakestBlocks.map(item => ({ label: item.block, percent: item.percent, note: `${formatter.format(item.lost)} puntos perdidos` })));
     }
 
     function renderHeatmap() {
@@ -933,10 +960,9 @@
 
     function renderDistribution() {
       const ranges = [
-        { label: "0-59", min: 0, max: 59.999 },
-        { label: "60-68", min: 60, max: 68.999 },
-        { label: "69-84", min: 69, max: 84.999 },
-        { label: "85-100", min: 85, max: 100 }
+        { label: "0-69", min: 0, max: 69.999 },
+        { label: "70-79", min: 70, max: 79.999 },
+        { label: "80-100", min: 80, max: 100 }
       ];
       const maxCount = Math.max(...ranges.map(range => visiblePeople.filter(person => person.percent >= range.min && person.percent <= range.max).length), 1);
       renderBars("distribution", ranges.map(range => {
@@ -956,31 +982,31 @@
       const name = document.getElementById("personTrendFilter").value;
       const trend = buildPersonTrend(name);
       const person = buildPeople(rawData.examRecords).find(item => normalize(item.name) === normalize(name)) || { area: getArea(name), percent: 0, examCount: 0 };
-      const normalTrend = trend.filter(item => !isTrialExam(item.exam));
+      const normalTrend = trend.filter(item => !isSpecialExam(item.exam));
       const avg = normalTrend.length ? normalTrend.reduce((sum, item) => sum + item.percent, 0) / normalTrend.length : 0;
       const best = [...trend].sort((a, b) => b.percent - a.percent)[0] || { exam: "Sin datos", percent: 0 };
       const weakest = [...trend].sort((a, b) => a.percent - b.percent)[0] || { exam: "Sin datos", percent: 0 };
       document.getElementById("personSummary").innerHTML = [
         ["Area", person.area || getArea(name), "Cargo registrado"],
-        ["Promedio normal", `${formatter.format(avg)}%`, "Sin periodo de prueba"],
-        ["Examenes", trend.length, "Presentados por la persona"],
+        ["Promedio normal", `${formatter.format(avg)}%`, "Sin diagnostico ni periodo"],
+        ["Temas / intentos", `${trend.length} / ${person.attemptCount || trend.length}`, "Examenes distintos y presentaciones"],
         ["Mejor examen", best.exam, `${formatter.format(best.percent)}%`],
         ["Examen a reforzar", weakest.exam, `${formatter.format(weakest.percent)}%`],
-        ["Periodo de prueba", trend.some(item => isTrialExam(item.exam)) ? "Tiene datos" : "No presentado", "No suma al ranking general"]
+        ["Especiales", trend.filter(item => isSpecialExam(item.exam)).length || "No", "Diagnostico/periodo no suman al general"]
       ].map(([label, value, note]) => `<div class="card"><div><strong>${value}</strong><small>${label} - ${note}</small></div></div>`).join("");
-      renderBars("personTrendBars", trend.map(item => ({ label: item.exam, percent: item.percent, note: `${formatter.format(item.score)} de ${formatter.format(item.max)} pts - ${formatter.format(item.lost)} pts perdidos` })));
+      renderBars("personTrendBars", trend.map(item => ({ label: item.exam, percent: item.percent, note: `${item.attempts?.size || 1} intento(s) - ${formatter.format(item.score)} de ${formatter.format(item.max)} pts - ${formatter.format(item.lost)} pts perdidos` })));
     }
 
     function renderSignals() {
-      const allPeople = buildPeople(primaryRecords(rawData.examRecords)).filter(person => !isSecurity(person.area));
+      const allPeople = buildPeople(primaryRecords(rawData.examRecords)).filter(person => !isSecurity(person.area) && person.examCount > 0);
       const improvements = allPeople.map(person => {
-        const trend = buildPersonTrend(person.name).filter(item => !isTrialExam(item.exam));
+        const trend = buildPersonTrend(person.name).filter(item => !isSpecialExam(item.exam));
         const first = trend[0]?.percent || 0;
         const last = trend[trend.length - 1]?.percent || 0;
         return { ...person, improvement: trend.length > 1 ? last - first : 0 };
       });
       const topImprovers = [...improvements].sort((a, b) => b.improvement - a.improvement).slice(0, 5);
-      const support = allPeople.filter(person => person.percent > 0 && person.percent < 69).sort((a, b) => a.percent - b.percent).slice(0, 6);
+      const support = allPeople.filter(person => person.percent <= 69).sort((a, b) => a.percent - b.percent).slice(0, 6);
       document.getElementById("peopleSignals").innerHTML = `
         <div class="note"><strong>Mayor mejora:</strong> ${topImprovers.map(person => `${person.name} (${formatter.format(person.improvement)} pts)`).join(", ") || "Sin datos"}</div>
         ${support.map(person => `<div class="card"><div><strong>${person.name}</strong><small>${person.area} - requiere acompanamiento</small></div><span class="value">${formatter.format(person.percent)}%</span></div>`).join("")}
@@ -995,19 +1021,27 @@
     }
 
     function renderAlerts() {
-      const blocks = buildBlocks(analysisRecordsCache);
-      const red = blocks.filter(item => item.percent <= 69).sort((a, b) => a.percent - b.percent);
-      const orange = blocks.filter(item => item.percent > 69 && item.percent < 81).sort((a, b) => a.percent - b.percent);
-      const green = blocks.filter(item => item.percent >= 81).sort((a, b) => b.percent - a.percent);
-      const major = red[0] || orange[0] || blocks.sort((a, b) => a.percent - b.percent)[0];
-      document.getElementById("alerts").innerHTML = `
-        <div class="note"><strong>Mayor alerta:</strong> ${major ? `${major.block} con ${formatter.format(major.percent)}%` : "Sin datos"}.</div>
-        ${[
-          ["69% o menos", red, "bad"],
-          ["70% a 80%", orange, "mid"],
-          ["81% a 100%", green, "good"]
-        ].map(([label, list, cls]) => `<div class="card alert-card"><span class="dot ${cls}"></span><div><strong>${label}</strong><small>${list.map(item => `${item.block} ${formatter.format(item.percent)}%`).join(", ") || "Sin bloques"}</small></div></div>`).join("")}
-      `;
+      const exams = [...new Set(activeRecords.map(row => row.exam))].filter(Boolean);
+      const cards = exams.map(exam => {
+        const records = analysisRecordsCache.filter(row => row.exam === exam);
+        const blocks = buildBlocks(records).sort((a, b) => a.percent - b.percent);
+        if (!blocks.length) return "";
+        const low = blocks[0];
+        const high = blocks[blocks.length - 1];
+        const avg = blocks.reduce((sum, item) => sum + item.percent, 0) / blocks.length;
+        const lowStatus = statusFor(low.percent);
+        const avgStatus = statusFor(avg);
+        const highStatus = statusFor(high.percent);
+        return `
+          <div class="question">
+            <strong>${exam}</strong>
+            <span><span class="dot ${lowStatus.className}"></span> Mas bajo: ${low.block} ${formatter.format(low.percent)}%</span>
+            <span><span class="dot ${avgStatus.className}"></span> Promedio bloques: ${formatter.format(avg)}%</span>
+            <span><span class="dot ${highStatus.className}"></span> Mas alto: ${high.block} ${formatter.format(high.percent)}%</span>
+          </div>
+        `;
+      }).join("");
+      document.getElementById("alerts").innerHTML = cards || `<div class="empty">No hay alertas para este filtro.</div>`;
     }
 
     function populateFilters() {
@@ -1016,8 +1050,8 @@
       const blockValue = document.getElementById("blockFilter").value;
       const personValue = document.getElementById("personTrendFilter").value;
       const normalExams = [...new Set(primaryRecords(rawData.examRecords).map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      const trialExams = [...new Set(trialRecords(rawData.examRecords).map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      const exams = [...normalExams, ...trialExams];
+      const specialExams = [...new Set(specialRecords(rawData.examRecords).map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const exams = [...normalExams, ...specialExams];
       const areas = [...new Set(rawData.staff.map(person => person.area).filter(area => area && !isSecurity(area)))].sort((a, b) => a.localeCompare(b));
       const blocks = [...new Set(activeRecords.map(row => row.block))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       const selectedArea = getSelectedArea();
@@ -1025,7 +1059,7 @@
         .filter(Boolean)
         .filter(name => selectedArea === "TODAS" || getArea(name) === selectedArea)
         .sort((a, b) => a.localeCompare(b));
-      document.getElementById("examFilter").innerHTML = `<option value="TODOS">Todos los examenes normales</option>${normalExams.map(exam => `<option value="${exam}">${exam}</option>`).join("")}${trialExams.length ? `<option disabled>-- Periodo de prueba --</option>${trialExams.map(exam => `<option value="${exam}">${exam}</option>`).join("")}` : ""}`;
+      document.getElementById("examFilter").innerHTML = `<option value="TODOS">Todos los examenes normales</option>${normalExams.map(exam => `<option value="${exam}">${exam}</option>`).join("")}${specialExams.length ? `<option disabled>-- Diagnostico y periodo de prueba --</option>${specialExams.map(exam => `<option value="${exam}">${exam}</option>`).join("")}` : ""}`;
       document.getElementById("areaFilter").innerHTML = `<option value="TODAS">Todas las areas</option>${areas.map(area => `<option value="${area}">${area}</option>`).join("")}`;
       document.getElementById("blockFilter").innerHTML = `<option value="TODOS">Todos los bloques</option>${blocks.map(block => `<option value="${block}">${block}</option>`).join("")}`;
       document.getElementById("personTrendFilter").innerHTML = peopleNames.map(name => `<option value="${name}">${name}</option>`).join("");
@@ -1051,8 +1085,8 @@
       renderQuestions();
       renderAlerts();
       document.getElementById("rankingDescription").textContent = getSelectedExam() === "TODOS"
-        ? "Ranking acumulado de examenes normales. Seguridad y periodo de prueba no aparecen."
-        : isTrialExam(getSelectedExam())
+        ? "Ranking acumulado de examenes normales. Seguridad, diagnostico y periodo de prueba no aparecen."
+        : isSpecialExam(getSelectedExam())
           ? `Vista separada de ${getSelectedExam()}. No suma al ranking general.`
           : `Ranking del examen ${getSelectedExam()}. Seguridad no aparece.`;
     }
@@ -1077,3 +1111,4 @@
   </script>
 </body>
 </html>
+
