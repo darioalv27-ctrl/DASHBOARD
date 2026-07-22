@@ -272,6 +272,101 @@
       margin-bottom: 14px;
     }
 
+    .person-profile {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 12px;
+      margin-bottom: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+
+    .person-profile h3 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.15;
+    }
+
+    .person-profile p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .score-ring {
+      justify-self: end;
+      width: 112px;
+      height: 112px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--brand) calc(var(--score) * 1%), #e4ebf2 0);
+    }
+
+    .score-ring span {
+      width: 78px;
+      height: 78px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: white;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .exam-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .exam-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--soft);
+    }
+
+    .exam-card header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .exam-card strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+
+    .exam-card small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .mini-track {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e2e9f0;
+    }
+
+    .mini-track span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--brand);
+    }
+
     .cards,
     .questions {
       display: grid;
@@ -367,6 +462,9 @@
       .bar-row { grid-template-columns: 108px 1fr 58px; }
       .questions { grid-template-columns: 1fr; }
       .person-summary { grid-template-columns: 1fr; }
+      .person-profile { grid-template-columns: 1fr; }
+      .score-ring { justify-self: start; }
+      .exam-cards { grid-template-columns: 1fr; }
       th, td { padding: 9px 10px; }
     }
   </style>
@@ -464,7 +562,9 @@
             </div>
           </div>
           <div class="content">
+            <div id="personProfile"></div>
             <div class="person-summary" id="personSummary"></div>
+            <div class="exam-cards" id="personExamCards"></div>
             <div class="bars" id="personTrendBars"></div>
           </div>
         </section>
@@ -978,6 +1078,12 @@
       return [...person.exams.values()].map(exam => ({ ...exam, percent: examPercent(exam) })).sort((a, b) => a.exam.localeCompare(b.exam, undefined, { numeric: true }));
     }
 
+    function recommendationFor(percent, weakest) {
+      if (percent >= 80) return `Mantener ritmo. Puede apoyar a otros en ${weakest.exam || "el tema mas debil"}.`;
+      if (percent >= 70) return `Reforzar ${weakest.exam || "el tema mas bajo"} para subir a excelente.`;
+      return `Plan de acompanamiento recomendado, iniciando por ${weakest.exam || "el tema mas bajo"}.`;
+    }
+
     function renderPersonTrend() {
       const name = document.getElementById("personTrendFilter").value;
       const trend = buildPersonTrend(name);
@@ -986,6 +1092,19 @@
       const avg = normalTrend.length ? normalTrend.reduce((sum, item) => sum + item.percent, 0) / normalTrend.length : 0;
       const best = [...trend].sort((a, b) => b.percent - a.percent)[0] || { exam: "Sin datos", percent: 0 };
       const weakest = [...trend].sort((a, b) => a.percent - b.percent)[0] || { exam: "Sin datos", percent: 0 };
+      const status = statusFor(avg);
+      document.getElementById("personProfile").innerHTML = `
+        <div class="person-profile">
+          <div>
+            <h3>${name || "Sin persona seleccionada"}</h3>
+            <p><strong>${person.area || getArea(name)}</strong> - Estado: <span class="pill ${status.className}">${status.label}</span></p>
+            <p>${recommendationFor(avg, weakest)}</p>
+          </div>
+          <div class="score-ring" style="--score:${Math.max(0, Math.min(avg, 100))}">
+            <span>${formatter.format(avg)}%</span>
+          </div>
+        </div>
+      `;
       document.getElementById("personSummary").innerHTML = [
         ["Area", person.area || getArea(name), "Cargo registrado"],
         ["Promedio normal", `${formatter.format(avg)}%`, "Sin diagnostico ni periodo"],
@@ -994,6 +1113,22 @@
         ["Examen a reforzar", weakest.exam, `${formatter.format(weakest.percent)}%`],
         ["Especiales", trend.filter(item => isSpecialExam(item.exam)).length || "No", "Diagnostico/periodo no suman al general"]
       ].map(([label, value, note]) => `<div class="card"><div><strong>${value}</strong><small>${label} - ${note}</small></div></div>`).join("");
+      document.getElementById("personExamCards").innerHTML = trend.map(item => {
+        const itemStatus = statusFor(item.percent);
+        return `
+          <article class="exam-card">
+            <header>
+              <div>
+                <strong>${item.exam}</strong>
+                <small>${item.attempts?.size || 1} intento(s) - ${formatter.format(item.lost)} pts perdidos</small>
+              </div>
+              <span class="pill ${itemStatus.className}">${itemStatus.label}</span>
+            </header>
+            <div class="mini-track"><span class="${itemStatus.className}" style="width:${Math.max(item.percent, 2)}%; background: var(--${itemStatus.className === "good" ? "good" : itemStatus.className === "mid" ? "warn" : "danger"});"></span></div>
+            <small>${formatter.format(item.score)} de ${formatter.format(item.max)} puntos - ${formatter.format(item.percent)}%</small>
+          </article>
+        `;
+      }).join("") || `<div class="empty">No hay examenes para esta persona.</div>`;
       renderBars("personTrendBars", trend.map(item => ({ label: item.exam, percent: item.percent, note: `${item.attempts?.size || 1} intento(s) - ${formatter.format(item.score)} de ${formatter.format(item.max)} pts - ${formatter.format(item.lost)} pts perdidos` })));
     }
 
@@ -1111,4 +1246,3 @@
   </script>
 </body>
 </html>
-
