@@ -723,6 +723,20 @@
       return normalize(area).includes("SEGURIDAD");
     }
 
+    function normalizeArea(area) {
+      const value = normalize(area);
+      if (!value) return "SIN CARGO";
+      if (value.includes("SEGURIDAD")) return "SEGURIDAD";
+      if (value.includes("ASESOR")) return "ASESOR";
+      if (value.includes("BARTENDER") || value.includes("BARRA")) return "BARTENDER";
+      if (value.includes("SERVICIO")) return "SERVICIO";
+      if (value.includes("LIDER")) return "LIDER";
+      if (value.includes("HOST")) return "HOST";
+      if (value.includes("CAJA")) return "CAJA";
+      if (value.includes("PATIN")) return "PATIN";
+      return clean(area).toUpperCase();
+    }
+
     function isTrialExam(exam) {
       const value = normalize(exam);
       return value.includes("PERIODO") || value.includes("PRUEBA");
@@ -747,10 +761,19 @@
     }
 
     function parseStaffCsv(text) {
-      return parseCsv(text)
-        .filter(row => row.some(Boolean))
-        .map(row => ({ name: clean(row[0]), area: clean(row[1]) || "SIN CARGO", score: numberValue(row[2]) }))
-        .filter(person => person.name);
+      const rows = parseCsv(text).filter(row => row.some(Boolean));
+      const headers = (rows[0] || []).map(normalizeHeader);
+      const nameIndex = headers.findIndex(header => header.includes("NOMBRE"));
+      const areaIndex = headers.findIndex(header => header.includes("AREA") || header.includes("CARGO"));
+      const scoreIndex = headers.findIndex(header => header.includes("PUNTAJE") || header.includes("PROMEDIO"));
+      const start = nameIndex >= 0 ? 1 : 0;
+      return rows.slice(start)
+        .map(row => ({
+          name: clean(row[nameIndex >= 0 ? nameIndex : 0]),
+          area: normalizeArea(row[areaIndex >= 0 ? areaIndex : 1]),
+          score: numberValue(row[scoreIndex >= 0 ? scoreIndex : 2])
+        }))
+        .filter(person => person.name && normalize(person.name) !== "NOMBRE");
     }
 
     function parseBaseCsv(text) {
@@ -791,7 +814,7 @@
           records.push({ ...base, score: numberValue(secondRaw), sheetAverage: 0, attempt: 2 });
         }
         return records;
-      }).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
+      }).filter(row => row.exam && row.name && row.block && row.question && row.max > 0 && normalize(row.block) !== "TOTAL" && normalize(row.question) !== "TOTAL");
     }
 
     function parseGroupedBaseCsv(rows) {
@@ -852,7 +875,9 @@
           const block = clean(row[group.columns.block]);
           const question = clean(row[group.columns.question]);
           const scoreRaw = clean(row[group.columns.score]);
-          if (!block || normalize(block) === "TOTAL" || !question || scoreRaw === "") return [];
+          const answer = clean(row[group.columns.answer]);
+          if (!block || !question || scoreRaw === "") return [];
+          if ([block, question, answer].some(value => normalize(value) === "TOTAL")) return [];
           const maxRaw = clean(row[group.columns.max]);
           const max = maxRaw === "" ? 100 : numberValue(maxRaw);
           const base = {
@@ -860,7 +885,7 @@
             name,
             block,
             question,
-            answer: clean(row[group.columns.answer]),
+            answer,
             max,
             score: numberValue(scoreRaw),
             sheetAverage: 0,
@@ -935,7 +960,7 @@
     }
 
     function getArea(name) {
-      return staffMap().get(normalize(name))?.area || "SIN CARGO";
+      return normalizeArea(staffMap().get(normalize(name))?.area || "SIN CARGO");
     }
 
     function attemptKey(row) {
@@ -963,7 +988,7 @@
     }
 
     function allowedForGeneral(person) {
-      if (isSecurity(person.area)) return false;
+      if (getSelectedArea() === "TODAS" && isSecurity(person.area)) return false;
       return true;
     }
 
@@ -1015,8 +1040,8 @@
       const area = getSelectedArea();
       return records.filter(row => {
         const personArea = getArea(row.name);
-        if (isSecurity(personArea)) return false;
         if (area !== "TODAS" && personArea !== area) return false;
+        if (area === "TODAS" && isSecurity(personArea)) return false;
         return true;
       });
     }
@@ -1058,7 +1083,7 @@
       const areas = new Map();
       records.forEach(row => {
         const area = getArea(row.name);
-        if (isSecurity(area)) return;
+        if (getSelectedArea() === "TODAS" && isSecurity(area)) return;
         const item = areas.get(area) || { area, people: new Set(), score: 0, max: 0, lost: 0 };
         item.people.add(normalize(row.name));
         item.score += row.score;
@@ -1175,7 +1200,7 @@
 
     function renderHeatmap() {
       const exams = [...new Set(primaryRecords(rawData.examRecords).map(row => row.exam))];
-      const areas = [...new Set(rawData.staff.map(person => person.area).filter(area => area && !isSecurity(area)))].sort((a, b) => a.localeCompare(b));
+      const areas = [...new Set(rawData.staff.map(person => normalizeArea(person.area)).filter(Boolean))].sort((a, b) => a.localeCompare(b));
       const rows = areas.map(area => {
         const cells = exams.map(exam => {
           const records = rawData.examRecords.filter(row => row.exam === exam && getArea(row.name) === area);
@@ -1319,7 +1344,7 @@
       const normalExams = [...new Set(primaryRecords(rawData.examRecords).map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       const specialExams = [...new Set(specialRecords(rawData.examRecords).map(row => row.exam))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       const exams = [...normalExams, ...specialExams];
-      const areas = [...new Set(rawData.staff.map(person => person.area).filter(area => area && !isSecurity(area)))].sort((a, b) => a.localeCompare(b));
+      const areas = [...new Set(rawData.staff.map(person => normalizeArea(person.area)).filter(Boolean))].sort((a, b) => a.localeCompare(b));
       const blocks = [...new Set(activeRecords.map(row => row.block))].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       const selectedArea = getSelectedArea();
       const peopleNames = [...new Set([...rawData.staff.map(person => person.name), ...rawData.examRecords.map(row => row.name)])]
