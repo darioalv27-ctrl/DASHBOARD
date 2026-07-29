@@ -797,25 +797,28 @@
     function parseGroupedBaseCsv(rows) {
       const headerRowIndex = rows.findIndex(row => {
         const normalized = row.map(normalizeHeader);
-        return normalized.includes("NOMBRE") && normalized.includes("BLOQUE") && normalized.includes("PREGUNTA");
+        return normalized.some(header => header.includes("NOMBRE")) && normalized.some(header => header.includes("BLOQUE")) && normalized.includes("PREGUNTA");
       });
-      if (headerRowIndex <= 0) return [];
-      const examRow = rows[headerRowIndex - 1] || [];
+      if (headerRowIndex < 0) return [];
+      const headerRow = rows[headerRowIndex] || [];
+      const examRow = headerRowIndex > 0 ? rows[headerRowIndex - 1] || [] : headerRow;
       const subHeaders = (rows[headerRowIndex] || []).map(normalizeHeader);
-      const nameIndex = subHeaders.indexOf("NOMBRE");
+      const nameIndex = subHeaders.findIndex(header => header.includes("NOMBRE")) >= 0 ? subHeaders.findIndex(header => header.includes("NOMBRE")) : 0;
       const dateIndex = subHeaders.indexOf("FECHA");
-      if (nameIndex < 0) return [];
+      const isBlockHeader = header => header === "BLOQUE" || header.endsWith(" BLOQUE");
+      const isPlainHeader = value => ["EXAMENES", "NOMBRE", "BLOQUE", "PREGUNTA", "RESPUESTA", "PUNTAJE MAXIMO", "MAXIMO", "PUNTAJE OBTENIDO", "OBTENIDO"].includes(normalizeHeader(value));
+      const examFromBlockHeader = header => clean(header.replace(/\bBLOQUE\b/gi, ""));
 
       const groups = [];
-      for (let index = nameIndex + 1; index < subHeaders.length; index += 1) {
-        if (subHeaders[index] !== "BLOQUE") continue;
+      for (let index = 0; index < subHeaders.length; index += 1) {
+        if (!isBlockHeader(subHeaders[index])) continue;
         let end = index + 1;
-        while (end < subHeaders.length && subHeaders[end] !== "BLOQUE") end += 1;
-        const titleInsideGroup = examRow.slice(index, end).map(clean).find(title => title && normalize(title) !== "EXAMENES");
+        while (end < subHeaders.length && !isBlockHeader(subHeaders[end])) end += 1;
+        const titleInsideGroup = examFromBlockHeader(headerRow[index]) || examRow.slice(index, end).map(clean).find(title => title && !isPlainHeader(title));
         let titleBeforeGroup = "";
         for (let scan = index; scan >= 0; scan -= 1) {
           const title = clean(examRow[scan]);
-          if (title && normalize(title) !== "EXAMENES") {
+          if (title && !isPlainHeader(title)) {
             titleBeforeGroup = title;
             break;
           }
@@ -824,7 +827,7 @@
         const columns = {};
         for (let column = index; column < end; column += 1) {
           const header = subHeaders[column];
-          if (header === "BLOQUE") columns.block = column;
+          if (isBlockHeader(header)) columns.block = column;
           if (header === "PREGUNTA") columns.question = column;
           if (header === "RESPUESTA") columns.answer = column;
           if (header === "PUNTAJE MAXIMO" || header === "MAXIMO" || (header.includes("PUNTAJE") && header.includes("MAXIMO"))) columns.max = column;
@@ -836,7 +839,7 @@
 
       let lastName = "";
       return rows.slice(headerRowIndex + 1).flatMap(row => {
-        const explicitName = clean(row[nameIndex]);
+        const explicitName = clean(row[0]) || clean(row[nameIndex]);
         if (explicitName) lastName = explicitName;
         const name = explicitName || lastName;
         if (!name) return [];
