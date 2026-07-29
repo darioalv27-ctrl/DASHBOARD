@@ -769,7 +769,8 @@
       const averageIndex = find("PROMEDIOS POR EXAMEN");
       const dateIndex = find("FECHA");
       if (examIndex < 0 || blockIndex < 0 || questionIndex < 0 || scoreIndex < 0) {
-        return parseWideBaseCsv(rows, headers);
+        const grouped = parseGroupedBaseCsv(rows);
+        return grouped.length ? grouped : parseWideBaseCsv(rows, headers);
       }
       return rows.slice(1).flatMap(row => {
         const base = {
@@ -790,6 +791,74 @@
           records.push({ ...base, score: numberValue(secondRaw), sheetAverage: 0, attempt: 2 });
         }
         return records;
+      }).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
+    }
+
+    function parseGroupedBaseCsv(rows) {
+      const headerRowIndex = rows.findIndex(row => {
+        const normalized = row.map(normalizeHeader);
+        return normalized.includes("NOMBRE") && normalized.includes("BLOQUE") && normalized.includes("PREGUNTA");
+      });
+      if (headerRowIndex <= 0) return [];
+      const examRow = rows[headerRowIndex - 1] || [];
+      const subHeaders = (rows[headerRowIndex] || []).map(normalizeHeader);
+      const nameIndex = subHeaders.indexOf("NOMBRE");
+      const dateIndex = subHeaders.indexOf("FECHA");
+      if (nameIndex < 0) return [];
+
+      let currentExam = "";
+      const examByColumn = subHeaders.map((_, index) => {
+        const title = clean(examRow[index]);
+        if (title && normalize(title) !== "EXAMENES") currentExam = title;
+        return currentExam;
+      });
+
+      const groups = [];
+      for (let index = nameIndex + 1; index < subHeaders.length; index += 1) {
+        if (subHeaders[index] !== "BLOQUE" || !examByColumn[index]) continue;
+        const exam = examByColumn[index];
+        let end = index + 1;
+        while (end < subHeaders.length && examByColumn[end] === exam && subHeaders[end] !== "BLOQUE") end += 1;
+        const columns = {};
+        for (let column = index; column < end; column += 1) {
+          const header = subHeaders[column];
+          if (header === "BLOQUE") columns.block = column;
+          if (header === "PREGUNTA") columns.question = column;
+          if (header === "RESPUESTA") columns.answer = column;
+          if (header === "PUNTAJE MAXIMO") columns.max = column;
+          if (header === "PUNTAJE OBTENIDO") columns.score = column;
+          if (header === "SEGUNDO PUNTAJE" || (header.includes("SEGUNDO") && header.includes("PUNTAJE"))) columns.secondScore = column;
+        }
+        if (columns.block >= 0 && columns.question >= 0 && columns.score >= 0) groups.push({ exam, columns });
+      }
+
+      return rows.slice(headerRowIndex + 1).flatMap(row => {
+        const name = clean(row[nameIndex]);
+        if (!name) return [];
+        return groups.flatMap(group => {
+          const block = clean(row[group.columns.block]);
+          const question = clean(row[group.columns.question]);
+          const scoreRaw = clean(row[group.columns.score]);
+          if (!block || normalize(block) === "TOTAL" || !question || scoreRaw === "") return [];
+          const maxRaw = clean(row[group.columns.max]);
+          const max = maxRaw === "" ? 100 : numberValue(maxRaw);
+          const base = {
+            exam: group.exam,
+            name,
+            block,
+            question,
+            answer: clean(row[group.columns.answer]),
+            max,
+            score: numberValue(scoreRaw),
+            sheetAverage: 0,
+            date: dateIndex >= 0 ? clean(row[dateIndex]) : "",
+            attempt: 1
+          };
+          const records = [base];
+          const secondRaw = group.columns.secondScore >= 0 ? clean(row[group.columns.secondScore]) : "";
+          if (secondRaw !== "") records.push({ ...base, score: numberValue(secondRaw), attempt: 2 });
+          return records;
+        });
       }).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
     }
 
