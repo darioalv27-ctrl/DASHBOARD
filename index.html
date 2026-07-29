@@ -768,6 +768,9 @@
       const secondScoreIndex = find("SEGUNDO PUNTAJE") >= 0 ? find("SEGUNDO PUNTAJE") : findIncludes("SEGUNDO", "PUNTAJE");
       const averageIndex = find("PROMEDIOS POR EXAMEN");
       const dateIndex = find("FECHA");
+      if (examIndex < 0 || blockIndex < 0 || questionIndex < 0 || scoreIndex < 0) {
+        return parseWideBaseCsv(rows, headers);
+      }
       return rows.slice(1).flatMap(row => {
         const base = {
           exam: clean(row[examIndex]) || "Examen actual",
@@ -788,6 +791,46 @@
         }
         return records;
       }).filter(row => row.exam && row.name && row.block && row.question && row.max > 0);
+    }
+
+    function parseExamHeader(header) {
+      const raw = clean(header);
+      const parts = raw.split(/\||\/|-/).map(part => clean(part)).filter(Boolean);
+      if (parts.length >= 3) return { exam: parts[0], block: parts[1], question: parts.slice(2).join(" | ") };
+      if (parts.length === 2) return { exam: parts[0], block: "General", question: parts[1] };
+      return { exam: raw, block: "General", question: raw };
+    }
+
+    function parseWideBaseCsv(rows, headers) {
+      const findAny = (...labels) => labels.map(label => headers.indexOf(label)).find(index => index >= 0) ?? -1;
+      const nameIndex = findAny("NOMBRE", "COLABORADOR", "STAFF");
+      const areaIndex = findAny("AREA", "CARGO");
+      const dateIndex = findAny("FECHA");
+      const fixed = new Set([nameIndex, areaIndex, dateIndex].filter(index => index >= 0));
+      const examColumns = headers
+        .map((header, index) => ({ header, index, meta: parseExamHeader(rows[0][index]) }))
+        .filter(item => item.index >= 0 && !fixed.has(item.index) && clean(rows[0][item.index]));
+      return rows.slice(1).flatMap(row => {
+        const name = clean(row[nameIndex]);
+        if (!name) return [];
+        return examColumns.flatMap(column => {
+          const score = numberValue(row[column.index]);
+          const raw = clean(row[column.index]);
+          if (raw === "") return [];
+          return [{
+            exam: column.meta.exam,
+            name,
+            block: column.meta.block,
+            question: column.meta.question,
+            answer: "",
+            max: 100,
+            score,
+            sheetAverage: score,
+            date: clean(row[dateIndex]),
+            attempt: 1
+          }];
+        });
+      }).filter(row => row.exam && row.name && row.max > 0);
     }
 
     async function loadSheetData() {
