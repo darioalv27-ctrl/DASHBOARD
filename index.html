@@ -716,7 +716,7 @@
     }
 
     function normalizeHeader(value) {
-      return normalize(value);
+      return normalize(value).replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     }
 
     function isSecurity(area) {
@@ -827,8 +827,8 @@
           if (header === "BLOQUE") columns.block = column;
           if (header === "PREGUNTA") columns.question = column;
           if (header === "RESPUESTA") columns.answer = column;
-          if (header === "PUNTAJE MAXIMO") columns.max = column;
-          if (header === "PUNTAJE OBTENIDO") columns.score = column;
+          if (header === "PUNTAJE MAXIMO" || header === "MAXIMO" || (header.includes("PUNTAJE") && header.includes("MAXIMO"))) columns.max = column;
+          if (header === "PUNTAJE OBTENIDO" || header === "OBTENIDO" || (header.includes("PUNTAJE") && header.includes("OBTENIDO"))) columns.score = column;
           if (header === "SEGUNDO PUNTAJE" || (header.includes("SEGUNDO") && header.includes("PUNTAJE"))) columns.secondScore = column;
         }
         if (columns.block >= 0 && columns.question >= 0 && columns.score >= 0) groups.push({ exam, columns });
@@ -912,7 +912,14 @@
         fetch(STAFF_URL, { cache: "no-store" }).then(response => response.text()),
         fetch(BASE_URL, { cache: "no-store" }).then(response => response.text())
       ]);
-      return { staff: parseStaffCsv(staffCsv), examRecords: parseBaseCsv(baseCsv) };
+      const staff = parseStaffCsv(staffCsv);
+      const examRecords = parseBaseCsv(baseCsv);
+      if (!examRecords.length) {
+        const previewRows = parseCsv(baseCsv).slice(0, 4);
+        const preview = previewRows.map(row => row.slice(0, 12).map(clean).join(" | ")).join("<br>");
+        throw new Error(`Google cargo ${previewRows.length} filas, pero no encontre puntajes. Primeras filas: ${preview}`);
+      }
+      return { staff, examRecords };
     }
 
     function staffMap() {
@@ -1358,7 +1365,7 @@
       })
       .catch(error => {
         console.error(error);
-        document.querySelector("main").innerHTML = `<section><div class="content empty">No se pudo cargar Google Sheets. Revisa permisos del Sheet o nombres de pestanas STAFF y BASE_DATOS.</div></section>`;
+        document.querySelector("main").innerHTML = `<section><div class="content empty"><strong>No se pudo leer la base.</strong><br>${error.message}<br><br>Revisa que la pestana se llame BASE_DATOS y que tenga una fila con NOMBRE, BLOQUE, PREGUNTA y PUNTAJE OBTENIDO.</div></section>`;
       });
   </script>
 </body>
