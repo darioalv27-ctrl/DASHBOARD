@@ -806,19 +806,21 @@
       const dateIndex = subHeaders.indexOf("FECHA");
       if (nameIndex < 0) return [];
 
-      let currentExam = "";
-      const examByColumn = subHeaders.map((_, index) => {
-        const title = clean(examRow[index]);
-        if (title && normalize(title) !== "EXAMENES") currentExam = title;
-        return currentExam;
-      });
-
       const groups = [];
       for (let index = nameIndex + 1; index < subHeaders.length; index += 1) {
-        if (subHeaders[index] !== "BLOQUE" || !examByColumn[index]) continue;
-        const exam = examByColumn[index];
+        if (subHeaders[index] !== "BLOQUE") continue;
         let end = index + 1;
-        while (end < subHeaders.length && examByColumn[end] === exam && subHeaders[end] !== "BLOQUE") end += 1;
+        while (end < subHeaders.length && subHeaders[end] !== "BLOQUE") end += 1;
+        const titleInsideGroup = examRow.slice(index, end).map(clean).find(title => title && normalize(title) !== "EXAMENES");
+        let titleBeforeGroup = "";
+        for (let scan = index; scan >= 0; scan -= 1) {
+          const title = clean(examRow[scan]);
+          if (title && normalize(title) !== "EXAMENES") {
+            titleBeforeGroup = title;
+            break;
+          }
+        }
+        const exam = titleInsideGroup || titleBeforeGroup || `Examen ${groups.length + 1}`;
         const columns = {};
         for (let column = index; column < end; column += 1) {
           const header = subHeaders[column];
@@ -832,8 +834,11 @@
         if (columns.block >= 0 && columns.question >= 0 && columns.score >= 0) groups.push({ exam, columns });
       }
 
+      let lastName = "";
       return rows.slice(headerRowIndex + 1).flatMap(row => {
-        const name = clean(row[nameIndex]);
+        const explicitName = clean(row[nameIndex]);
+        if (explicitName) lastName = explicitName;
+        const name = explicitName || lastName;
         if (!name) return [];
         return groups.flatMap(group => {
           const block = clean(row[group.columns.block]);
